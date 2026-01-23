@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import AnimatedLogo from '@/components/AnimatedLogo';
 import { StatusBar } from 'expo-status-bar';
 import LogoText from '@/components/LogoText';
+import { SafeAreaFrameContext } from 'react-native-safe-area-context';
 
 export default function SplashScreen() {
     const router = useRouter();

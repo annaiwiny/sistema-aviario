@@ -1,3 +1,4 @@
+import Login from '@/components/Login';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function HomeScreen() {
     return (
         <SafeAreaView style={styles.container}>
-            <Text>Teste</Text>
+            <Login/>
         </SafeAreaView>
     );
 }
