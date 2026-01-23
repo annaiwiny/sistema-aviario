@@ -10,13 +10,7 @@ interface AnimatedLogoProps {
 }
 
 export default function AnimatedLogo({ onAnimationComplete }: AnimatedLogoProps) {
-    // Approximate length of the path. 
-    // You can find this exactly via path.getTotalLength() in a web api, or trial and error.
-    // Given the coordinates (up to ~800-1000 units), 5000 is a safe upper bound for a full stroke.
-    // The path data is scaled by 0.1 so the visual size is smaller, but the "units" in 'd' are large.
-    // The path data provided: M745 1646 c-71 -22...
-    // The scale is 0.1. So the effective length in the viewbox 170x175 is smaller, but dashArray applies to path units.
-    // Let's stick to a large number to ensure it covers everything.
+    
     const pathLength = 10000;
 
     const progress = useSharedValue(pathLength);
@@ -27,7 +21,7 @@ export default function AnimatedLogo({ onAnimationComplete }: AnimatedLogoProps)
 
     useEffect(() => {
         progress.value = withTiming(0, {
-            duration: 3000, 
+            duration: 2000, 
             easing: Easing.inOut(Easing.ease),
         }, (finished) => {
             if (finished && onAnimationComplete) {
