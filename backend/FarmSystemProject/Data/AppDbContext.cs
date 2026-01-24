@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+        modelBuilder.Entity<User>().HasIndex(u => u.Cpf).IsUnique();
         modelBuilder.Entity<Farm>().HasIndex(f => f.OwnerId).IsUnique();
         modelBuilder.Entity<Feed>().Property(f => f.BagValue).HasPrecision(18, 2);
     }
