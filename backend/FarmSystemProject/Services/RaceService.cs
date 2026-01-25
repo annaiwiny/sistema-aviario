@@ -5,7 +5,6 @@ using FarmSystemProject.Models.Farm;
 using Microsoft.EntityFrameworkCore;
 
 namespace FarmSystemProject.Services;
-
 public class RaceService : IRaceService
 {
     private readonly AppDbContext _context;
@@ -21,6 +20,12 @@ public class RaceService : IRaceService
     public async Task<RaceDTO?> GetById(int id)
     {
         var race = await _context.Races.FindAsync(id);
+        
+        if (race == null)
+        {
+            return null;
+        }
+
         return new RaceDTO { Id = race.Id, Name = race.Name };
     }
     public async Task<RaceDTO> Create(RaceDTO raceDto)
@@ -34,13 +39,19 @@ public class RaceService : IRaceService
     public async Task Update(int id, RaceDTO raceDto)
     {
         var race = await _context.Races.FindAsync(id);
-        race.Name = raceDto.Name;
-        await _context.SaveChangesAsync();
+        if (race != null)
+        {
+            race.Name = raceDto.Name;
+            await _context.SaveChangesAsync();
+        }
     }
     public async Task Delete(int id)
     {
         var race = await _context.Races.FindAsync(id);
-        _context.Races.Remove(race);
-        await _context.SaveChangesAsync();
+        if (race != null)
+        {
+            _context.Races.Remove(race);
+            await _context.SaveChangesAsync();
+        }
     }
 }
