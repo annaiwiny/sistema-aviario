@@ -4,16 +4,21 @@ using FarmSystemProject.DTOs.Users;
 using FarmSystemProject.Exceptions;
 using FarmSystemProject.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly ITokenService _tokenService;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(AppDbContext context, ITokenService tokenService)
+    public AuthService(AppDbContext context, ITokenService tokenService, IEmailService emailService, IConfiguration configuration)
     {
         _context = context;
         _tokenService = tokenService;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<LoginResponse> Login(LoginRequest request)
@@ -64,5 +69,52 @@ public class AuthService : IAuthService
                 Type = user.Type.ToString()
             }
         };
+    }
+
+    public async Task ForgotPassword(ForgotPasswordRequest request)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user == null)
+            return;
+
+        // gera token para troca de senha
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        user.PasswordResetToken = token;
+        user.PasswordResetTokenExpiration = DateTime.UtcNow.AddMinutes(30);
+        user.PasswordResetTokenUsed = false;
+
+        await _context.SaveChangesAsync();
+
+        var frontendUrl = _configuration["Frontend:BaseUrl"];
+        var link = $"{frontendUrl}/reset-password?token={token}";
+
+        await _emailService.SendEmail(
+            user.Email,
+            "Recuperação de senha",
+            $"Clique no link para redefinir sua senha: {link}"
+        );
+    }
+
+    public async Task ResetPassword(ResetPasswordRequest request)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u =>
+                u.PasswordResetToken == request.Token &&
+                u.PasswordResetTokenUsed == false &&
+                u.PasswordResetTokenExpiration > DateTime.UtcNow
+            );
+
+        if (user == null)
+            throw new BusinessException("Token inválido ou expirado");
+
+        user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.PasswordResetTokenUsed = true;
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiration = null;
+
+        await _context.SaveChangesAsync();
     }
 }

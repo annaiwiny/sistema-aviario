@@ -21,4 +21,18 @@ public class AuthController : ControllerBase
         var response = await _authService.Login(request);
         return Ok(response);
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        await _authService.ForgotPassword(request);
+        return Ok(new{message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação."});
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        await _authService.ResetPassword(request);
+        return Ok(new{message = "Senha redefinida com sucesso."});
+    }
 }

@@ -38,6 +38,9 @@ public class User
     public string? Phone { get; set; }
 
     public int FailedLoginAttempts { get; set; } = 0;
-
     public DateTime? LockoutEnd { get; set; }
+
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiration { get; set; }
+    public bool PasswordResetTokenUsed { get; set; }
 }

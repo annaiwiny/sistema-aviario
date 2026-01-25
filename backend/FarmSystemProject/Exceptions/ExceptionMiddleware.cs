@@ -1,7 +1,6 @@
 ﻿using FarmSystemProject.DTOs;
 using FarmSystemProject.Exceptions;
 using System.Net;
-using System.Text.Json;
 
 namespace FarmSystemProject.Middlewares;
 
@@ -43,6 +42,12 @@ public class ExceptionMiddleware
             case NotFoundException:
                 status = HttpStatusCode.NotFound;
                 error = "Not Found";
+                message = exception.Message;
+                break;
+
+            case UnauthorizedException:
+                status = HttpStatusCode.Unauthorized;
+                error = "Unauthorized";
                 message = exception.Message;
                 break;
 

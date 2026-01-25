@@ -2,30 +2,20 @@
 
 namespace FarmSystemProject.DTOs.Users;
 
-public class CreateUserRequest
+public class UpdateUserRequest
 {
-    [Required(ErrorMessage = "Nome é obrigatório")]
     [MaxLength(255, ErrorMessage = "Nome deve ter no máximo 255 caracteres")]
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    [Required(ErrorMessage = "Data de nascimento é obrigatória")]
-    [DataType(DataType.Date)]
-    public DateTime BirthDate { get; set; }
+    public DateTime? BirthDate { get; set; }
 
-    [Required(ErrorMessage = "E-mail é obrigatório")]
     [EmailAddress(ErrorMessage = "E-mail inválido")]
-    [MaxLength(255, ErrorMessage = "Email deve ter no máximo 255 caracteres")]
-    public string Email { get; set; }
+    [MaxLength(255, ErrorMessage = "E-mail deve ter no máximo 255 caracteres")]
+    public string? Email { get; set; }
 
-    [Required(ErrorMessage = "Senha é obrigatória")]
-    [MinLength(8, ErrorMessage = "Senha deve ter no mínimo 8 caracteres")]
-    [MaxLength(255, ErrorMessage = "Senha deve ter no máximo 255 caracteres")]
-    public string Password { get; set; }
-
-    [Required(ErrorMessage = "CPF é obrigatório")]
     [MinLength(11, ErrorMessage = "CPF deve conter exatamente 11 caracteres")]
     [MaxLength(11, ErrorMessage = "CPF deve conter exatamente 11 caracteres")]
-    public string Cpf { get; set; }
+    public string? Cpf { get; set; }
 
     [MaxLength(30, ErrorMessage = "Estado deve ter no máximo 30 caracteres")]
     public string? State { get; set; }
