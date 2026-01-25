@@ -32,7 +32,7 @@ public class UserService : IUserService
             Name = request.Name,
             BirthDate = request.BirthDate,
             Email = request.Email,
-            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password), // Hash da senha com Bcrypt
             Cpf = request.Cpf,
             Type = UserType.Farmer,
             State = request.State,
@@ -48,7 +48,8 @@ public class UserService : IUserService
         {
             Id = user.Id,
             Name = user.Name,
-            Email = user.Email
+            Email = user.Email,
+            Type = user.Type.ToString()
         };
     }
 
@@ -60,7 +61,8 @@ public class UserService : IUserService
             {
                 Id = u.Id,
                 Name = u.Name,
-                Email = u.Email
+                Email = u.Email,
+                Type = u.Type.ToString()
             })
             .FirstOrDefaultAsync();
 
