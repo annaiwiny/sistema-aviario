@@ -2,7 +2,7 @@
 using FarmSystemProject.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FarmSystemProject.Controllers;
 
@@ -42,12 +42,11 @@ public class UserController : ControllerBase
 
     private int GetUserIdFromToken()
     {
-        var sub = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (string.IsNullOrEmpty(sub))
+        if (string.IsNullOrEmpty(userId))
             throw new UnauthorizedAccessException("Token inválido");
 
-        return int.Parse(sub);
+        return int.Parse(userId);
     }
-
 }

@@ -7,10 +7,12 @@ namespace FarmSystemProject.Middlewares;
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionMiddleware> _logger;
 
-    public ExceptionMiddleware(RequestDelegate next)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -25,7 +27,7 @@ public class ExceptionMiddleware
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         HttpStatusCode status;
         string error;
@@ -52,6 +54,7 @@ public class ExceptionMiddleware
                 break;
 
             default:
+                _logger.LogError(exception, "Erro não tratado");
                 status = HttpStatusCode.InternalServerError;
                 error = "Internal Server Error";
                 message = "Ocorreu um erro interno. Tente novamente mais tarde.";

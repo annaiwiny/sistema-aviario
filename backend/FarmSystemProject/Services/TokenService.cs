@@ -35,10 +35,11 @@ public class JwtTokenService : ITokenService
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Type.ToString())
         };
+
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],
