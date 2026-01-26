@@ -1,6 +1,6 @@
 ﻿using FarmSystemProject.Data;
-using FarmSystemProject.DTOs;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.DTOs.FarmDTO;
+using FarmSystemProject.Interfaces.IFarm;
 using FarmSystemProject.Models.Farm;
 using Microsoft.EntityFrameworkCore;
 

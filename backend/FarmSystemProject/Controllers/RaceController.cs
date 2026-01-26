@@ -1,5 +1,5 @@
-﻿using FarmSystemProject.DTOs;
-using FarmSystemProject.Interfaces;
+﻿using FarmSystemProject.DTOs.FarmDTO;
+using FarmSystemProject.Interfaces.IFarm;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmSystemProject.Controllers;
