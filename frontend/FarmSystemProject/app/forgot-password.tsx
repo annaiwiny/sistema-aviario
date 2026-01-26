@@ -52,7 +52,7 @@ export default function ForgotPassword() {
 
                 {/* Description */}
                 <Text className="text-gray-500 text-base mb-10 leading-6">
-                    Informe um e-mail cadastrado e enviaremos um link para recuperação de sua senha.
+                    Informe um e-mail cadastrado e enviaremos um link para recuperação de sua senha
                 </Text>
 
                 {/* Email Input */}
