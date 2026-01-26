@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
 
 const Login = () => {
@@ -62,9 +63,11 @@ const Login = () => {
                             onChangeText={setPassword}
                             secureTextEntry
                         />
-                        <TouchableOpacity>
-                            <Text className="text-blue-600 font-bold mt-2 ml-1">Esqueceu a senha?</Text>
-                        </TouchableOpacity>
+                        <Link href="/forgot-password" asChild>
+                            <TouchableOpacity>
+                                <Text className="text-blue-600 font-bold mt-2 ml-1">Esqueceu a senha?</Text>
+                            </TouchableOpacity>
+                        </Link>
                     </View>
                 </View>
 
