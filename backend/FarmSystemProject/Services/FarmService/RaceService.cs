@@ -4,7 +4,7 @@ using FarmSystemProject.Interfaces.IFarm;
 using FarmSystemProject.Models.Farm;
 using Microsoft.EntityFrameworkCore;
 
-namespace FarmSystemProject.Services;
+namespace FarmSystemProject.Services.FarmService;
 public class RaceService : IRaceService
 {
     private readonly AppDbContext _context;

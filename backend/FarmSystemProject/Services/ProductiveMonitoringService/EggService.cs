@@ -4,7 +4,7 @@ using FarmSystemProject.Interfaces.IProductiveMonitoring;
 using FarmSystemProject.Models.ProductiveMonitoring;
 using Microsoft.EntityFrameworkCore;
 
-namespace FarmSystemProject.Services;
+namespace FarmSystemProject.Services.ProductiveMonitoringService;
 public class EggService : IEggService
 {
     private readonly AppDbContext _context;

@@ -28,11 +28,11 @@ public class EggController : ControllerBase
             return NotFound("Nenhuma coleta encontrada para esta data.");
         }
 
-        var totalOvos = results.Sum(e => e.CollectQuantity);
+        var totalEggs = results.Sum(e => e.CollectQuantity);
         return Ok(new
         {
             Data = collectDate.ToShortDateString(),
-            TotalColetado = totalOvos
+            TotalColetado = totalEggs
         });
     }
     [HttpPost]

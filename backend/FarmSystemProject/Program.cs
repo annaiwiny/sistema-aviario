@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using FarmSystemProject.Data;
-using FarmSystemProject.Services;
 using FarmSystemProject.Interfaces.IFarm;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
+using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Services.HelthMonitoringService;
+using FarmSystemProject.Services.ProductiveMonitoringService;
+using FarmSystemProject.Services.FarmService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IEggService, EggService>();
+builder.Services.AddScoped<IMortalityService, MortalityService>();
 
 var app = builder.Build();
 
