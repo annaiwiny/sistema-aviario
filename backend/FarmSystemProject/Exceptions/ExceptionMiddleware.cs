@@ -57,7 +57,7 @@ public class ExceptionMiddleware
                 _logger.LogError(exception, "Erro não tratado");
                 status = HttpStatusCode.InternalServerError;
                 error = "Internal Server Error";
-                message = "Ocorreu um erro interno. Tente novamente mais tarde.";
+                message = exception.ToString(); // Exibe o erro completo para debug
                 break;
         }
 

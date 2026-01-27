@@ -1,20 +1,66 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/Api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const router = useRouter();
 
-    const handleLogin = () => {
-        if (email && password) {
-            router.push('/welcome');
-        } else {
+    const handleLogin = async () => {
+        if (!email || !password) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const response = await fetch(`${API_URL}/api/Auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Salvar token e dados do usuário
+                await AsyncStorage.setItem('userToken', data.token);
+                await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+
+                // Verificar se já existe configuração inicial (Ex: Nome do Aviário)
+                const aviaryName = await AsyncStorage.getItem('aviaryName');
+                const nextRoute = aviaryName ? '/dashboard' : '/welcome';
+
+                // Redirecionar
+                if (Platform.OS === 'web') {
+                    // Pequeno delay para garantir que o estado de loading não quebre o DOM na transição
+                    setTimeout(() => router.replace(nextRoute), 100);
+                } else {
+                    router.replace(nextRoute);
+                }
+            } else {
+                const errorMessage = data.message || 'E-mail ou senha inválidos.';
+                Alert.alert('Erro', errorMessage);
+            }
+
+        } catch (error) {
+            console.error('Login error:', error);
+            Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -46,7 +92,7 @@ const Login = () => {
                         </Text>
                         <TextInput
                             className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
-                            placeholder=""
+                            placeholder="joão@gmail.com"
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -60,7 +106,7 @@ const Login = () => {
                         </Text>
                         <TextInput
                             className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
-                            placeholder=""
+                            placeholder="*************"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
@@ -76,14 +122,21 @@ const Login = () => {
                 {/* Buttons Section */}
 
                 <View className="mt-4 justify-center items-center">
-                    <Link href="/welcome" asChild>
-                        <TouchableOpacity
-                            className="bg-purple-500 py-6 w-60 rounded-3xl items-center shadow-md shadow-purple-200 mb-4 "
-                            onPress={handleLogin}
-                        >
+                    <TouchableOpacity
+                        className="bg-purple-500 py-6 w-60 rounded-3xl items-center shadow-md shadow-purple-200 mb-4 justify-center relative"
+                        onPress={handleLogin}
+                        disabled={isLoading}
+                    >
+                        <View style={{ opacity: isLoading ? 0 : 1 }}>
                             <Text className="text-white text-xl font-bold">Entrar</Text>
-                        </TouchableOpacity>
-                    </Link>
+                        </View>
+
+                        {isLoading && (
+                            <View className="absolute inset-0 justify-center items-center">
+                                <ActivityIndicator color="#FFF" />
+                            </View>
+                        )}
+                    </TouchableOpacity>
 
 
                     <Link href="/register" asChild>
@@ -91,6 +144,7 @@ const Login = () => {
                             <Text className="text-green-900 text-lg font-semibold">Cadastre-se</Text>
                         </TouchableOpacity>
                     </Link>
+
                 </View>
             </ScrollView>
         </SafeAreaView>

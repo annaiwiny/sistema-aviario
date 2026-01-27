@@ -8,6 +8,9 @@ using FarmSystemProject.Services.FarmService;
 using Microsoft.EntityFrameworkCore;
 using FarmSystemProject.Middlewares;
 
+using FarmSystemProject.Interfaces;
+using FarmSystemProject.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -15,6 +18,18 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -55,6 +70,11 @@ builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IEggService, EggService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();
 
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -65,7 +85,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-app.UseHttpsRedirection();
+app.UseCors("AllowAll");
+
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();

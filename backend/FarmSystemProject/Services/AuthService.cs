@@ -6,6 +6,9 @@ using FarmSystemProject.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
+namespace FarmSystemProject.Services;
+
+
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { API_URL } from '@/constants/Api';
 
 export default function Register() {
     const router = useRouter();
 
     // Form states
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,10 +18,14 @@ export default function Register() {
     const [state, setState] = useState('');
     const [city, setCity] = useState('');
     const [phone, setPhone] = useState('');
+    const [birthDate, setBirthDate] = useState('2000-01-01'); // Valor padrão para evitar erro, ideal seria um DatePicker
+    const [address, setAddress] = useState('');
 
-    const handleRegister = () => {
-        if (!email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleRegister = async () => {
+        if (!name || !email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
+            Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
             return;
         }
 
@@ -28,8 +34,53 @@ export default function Register() {
             return;
         }
 
-        Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
-        router.back();
+        setIsLoading(true);
+
+        try {
+            const response = await fetch(`${API_URL}/api/User`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    cpf,
+                    state,
+                    city,
+                    phone,
+                    birthDate: new Date(birthDate).toISOString(),
+                    address: address || 'Endereço não informado'
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                if (Platform.OS === 'web') {
+                    // Na web, alert nao tem callback, entao forçamos o replace
+                    setTimeout(() => {
+                        window.alert('Cadastro realizado com sucesso!');
+                        router.replace('/(tabs)');
+                    }, 100);
+                } else {
+                    Alert.alert('Sucesso', 'Cadastro realizado com sucesso!', [
+                        { text: 'OK', onPress: () => router.replace('/(tabs)') }
+                    ]);
+                }
+            } else {
+                const errorMessage = data.message || data.title || 'Ocorreu um erro ao realizar o cadastro.';
+                Alert.alert('Erro', errorMessage);
+                console.error('Erro cadastro:', data);
+            }
+
+        } catch (error) {
+            console.error('Erro de conexão:', error);
+            Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -63,6 +114,19 @@ export default function Register() {
 
                 {/* Form Fields */}
                 <View className="w-full space-y-4">
+
+                    {/* Nome (Adicionado pois é obrigatório na API) */}
+                    <View className="mb-4">
+                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
+                            Nome Completo
+                        </Text>
+                        <TextInput
+                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
+                            placeholder="Seu nome"
+                            value={name}
+                            onChangeText={setName}
+                        />
+                    </View>
 
                     {/* Email */}
                     <View className="mb-4">
@@ -126,17 +190,14 @@ export default function Register() {
                         <Text className="text-black font-semibold mb-2 ml-1 text-base">
                             Estado
                         </Text>
-                        <View className="relative justify-center">
-                            <TextInput
-                                className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow pr-10"
-                                placeholder=""
-                                value={state}
-                                onChangeText={setState}
-                            />
-                            <View className="absolute right-4 top-4">
-                                <Ionicons name="chevron-down" size={20} color="#000" />
-                            </View>
-                        </View>
+                        <TextInput
+                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
+                            placeholder="Ex: SP"
+                            value={state}
+                            onChangeText={setState}
+                            maxLength={2}
+                            autoCapitalize="characters"
+                        />
                     </View>
 
                     {/* Cidade */}
@@ -144,17 +205,25 @@ export default function Register() {
                         <Text className="text-black font-semibold mb-2 ml-1 text-base">
                             Cidade
                         </Text>
-                        <View className="relative justify-center">
-                            <TextInput
-                                className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow pr-10"
-                                placeholder=""
-                                value={city}
-                                onChangeText={setCity}
-                            />
-                            <View className="absolute right-4 top-4">
-                                <Ionicons name="chevron-down" size={20} color="#000" />
-                            </View>
-                        </View>
+                        <TextInput
+                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
+                            placeholder="Sua cidade"
+                            value={city}
+                            onChangeText={setCity}
+                        />
+                    </View>
+
+                    {/* Endereço */}
+                    <View className="mb-4">
+                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
+                            Endereço
+                        </Text>
+                        <TextInput
+                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
+                            placeholder="Logradouro, número..."
+                            value={address}
+                            onChangeText={setAddress}
+                        />
                     </View>
 
                     {/* Telefone */}
@@ -176,10 +245,19 @@ export default function Register() {
                 {/* Submit Button */}
                 <View className="items-center mt-4 mb-8">
                     <TouchableOpacity
-                        className="bg-purple-500 py-4 w-60 rounded-3xl items-center shadow-md shadow-purple-200"
+                        className="bg-purple-500 py-4 w-60 rounded-3xl items-center shadow-md shadow-purple-200 justify-center relative"
                         onPress={handleRegister}
+                        disabled={isLoading}
                     >
-                        <Text className="text-white text-xl font-bold">Cadastrar</Text>
+                        <View style={{ opacity: isLoading ? 0 : 1 }}>
+                            <Text className="text-white text-xl font-bold">Cadastrar</Text>
+                        </View>
+
+                        {isLoading && (
+                            <View className="absolute inset-0 justify-center items-center">
+                                <ActivityIndicator color="#FFF" />
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
 
