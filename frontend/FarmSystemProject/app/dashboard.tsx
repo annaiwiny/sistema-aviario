@@ -1,37 +1,65 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { API_URL } from '@/constants/Api';
 
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Modal, TouchableWithoutFeedback } from 'react-native';
+interface Lot {
+    id: number;
+    accommodationDate: string;
+    raceName: string;
+    raceQuantity: number;
+    farmId: number;
+}
 
 export default function DashboardScreen() {
-    const [aviaryName, setAviaryName] = React.useState('Aviário Caipira');
-    const [modalVisible, setModalVisible] = React.useState(false);
+    const [aviaryName, setAviaryName] = useState('Aviário Caipira');
+    const [modalVisible, setModalVisible] = useState(false);
+
+    const [lots, setLots] = useState<Lot[]>([]);
+    const [loading, setLoading] = useState(true);
+
     const router = useRouter();
 
     const notifications = [
         { id: 1, title: 'Alta Taxa de Mortalidade', time: '14:24', desc: 'Lote 01 ultrapassou 99%', icon: 'alert', type: 'alert' },
         { id: 2, title: 'Início de Postura', time: '14:24', desc: 'Lote 01 deu inicio a postura de ovos', icon: 'chicken', type: 'info' },
-        { id: 3, title: 'Alta Taxa de Mortalidade', time: '14:24', desc: 'Lote 01 ultrapassou 99%', icon: 'basket', type: 'production' },
-        { id: 4, title: 'Alta Taxa de Mortalidade', time: '14:24', desc: 'Lote 99 ultrapassou 99%', icon: 'alert', type: 'alert' },
-        { id: 5, title: 'Alta Taxa de Mortalidade', time: '14:24', desc: 'Lote 01 ultrapassou 99%', icon: 'basket', type: 'production' },
     ];
 
     useFocusEffect(
         React.useCallback(() => {
-            const loadAviaryName = async () => {
-                const name = await AsyncStorage.getItem('aviaryName');
-                if (name) {
-                    setAviaryName(name);
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+                    // 1. Carregar nome do aviário
+                    const name = await AsyncStorage.getItem('aviaryName');
+                    if (name) setAviaryName(name);
+
+                    // 2. Carregar lotes da API
+                    const token = await AsyncStorage.getItem('userToken');
+                    if (token) {
+                        const response = await fetch(`${API_URL}/api/Lot`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            setLots(data);
+                        } else {
+                            console.log('Erro ao buscar lotes:', response.status);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar dashboard', error);
+                } finally {
+                    setLoading(false);
                 }
             };
-            loadAviaryName();
+            loadData();
         }, [])
     );
 
@@ -74,14 +102,38 @@ export default function DashboardScreen() {
                     contentContainerStyle={{ paddingBottom: 100 }}
                     showsVerticalScrollIndicator={false}
                 >
-                    <TouchableOpacity
-                        className="bg-purple-500 rounded-xl p-8 mb-4 shadow-lg shadow-purple-200 items-center justify-center h-32"
-                        activeOpacity={0.8}
-                    >
-                        <Text className="text-white text-xl font-bold tracking-widest uppercase">
-                            LOTE 01
-                        </Text>
-                    </TouchableOpacity>
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#8B5CF6" className="mt-10" />
+                    ) : (
+                        lots.length === 0 ? (
+                            <View className="items-center mt-10">
+                                <Text className="text-gray-500 font-medium">Nenhum lote cadastrado.</Text>
+                                <Text className="text-gray-400 text-sm mt-2">Toque em + para adicionar.</Text>
+                            </View>
+                        ) : (
+                            lots.map((lot) => (
+                                <TouchableOpacity
+                                    key={lot.id}
+                                    className="bg-purple-500 rounded-xl p-6 mb-4 shadow-lg shadow-purple-200 h-32 justify-between"
+                                    activeOpacity={0.8}
+                                >
+                                    <View className="flex-row justify-between items-start">
+                                        <Text className="text-white text-xl font-bold tracking-widest uppercase">
+                                            LOTE {String(lot.id).padStart(2, '0')}
+                                        </Text>
+                                        <Text className="text-white/80 text-sm font-medium">
+                                            {new Date(lot.accommodationDate).toLocaleDateString('pt-BR')}
+                                        </Text>
+                                    </View>
+
+                                    <View>
+                                        <Text className="text-white font-semibold text-lg">{lot.raceName}</Text>
+                                        <Text className="text-white/80">{lot.raceQuantity} aves</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        )
+                    )}
                 </ScrollView>
 
                 {/* Floating Action Button */}
@@ -89,6 +141,7 @@ export default function DashboardScreen() {
                     <TouchableOpacity
                         className="bg-purple-500 w-16 h-16 rounded-full items-center justify-center shadow-lg shadow-purple-300"
                         activeOpacity={0.8}
+                        onPress={() => router.push('/create-batch')}
                     >
                         <FontAwesome name="plus" size={24} color="white" />
                     </TouchableOpacity>

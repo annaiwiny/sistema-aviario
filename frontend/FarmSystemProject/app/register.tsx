@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/constants/Api';
+import SuccessModal from '@/components/SuccessModal';
 
 export default function Register() {
     const router = useRouter();
@@ -22,6 +23,7 @@ export default function Register() {
     const [address, setAddress] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleRegister = async () => {
         if (!name || !email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
@@ -58,17 +60,7 @@ export default function Register() {
             const data = await response.json();
 
             if (response.ok) {
-                if (Platform.OS === 'web') {
-                    // Na web, alert nao tem callback, entao forçamos o replace
-                    setTimeout(() => {
-                        window.alert('Cadastro realizado com sucesso!');
-                        router.replace('/(tabs)');
-                    }, 100);
-                } else {
-                    Alert.alert('Sucesso', 'Cadastro realizado com sucesso!', [
-                        { text: 'OK', onPress: () => router.replace('/(tabs)') }
-                    ]);
-                }
+                setShowSuccessModal(true);
             } else {
                 const errorMessage = data.message || data.title || 'Ocorreu um erro ao realizar o cadastro.';
                 Alert.alert('Erro', errorMessage);
@@ -81,6 +73,11 @@ export default function Register() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleSuccessClose = () => {
+        setShowSuccessModal(false);
+        router.replace('/(tabs)');
     };
 
     return (
@@ -262,6 +259,8 @@ export default function Register() {
                 </View>
 
             </ScrollView>
+
+            <SuccessModal visible={showSuccessModal} onClose={handleSuccessClose} />
         </SafeAreaView>
     );
 }
