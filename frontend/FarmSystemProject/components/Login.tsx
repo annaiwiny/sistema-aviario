@@ -39,11 +39,11 @@ const Login = () => {
                 {/* Form Section */}
                 <View className="w-full">
                     <View className="mb-6">
-                        <Text className="text-black font-bold mb-2 ml-1 text-base">
+                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
                             E-mail <Text className="text-red-500">*</Text>
                         </Text>
                         <TextInput
-                            className="bg-gray-200 rounded-2xl p-4 text-base text-gray-800"
+                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
                             placeholder=""
                             value={email}
                             onChangeText={setEmail}
@@ -53,11 +53,11 @@ const Login = () => {
                     </View>
 
                     <View className="mb-8">
-                        <Text className="text-black font-bold mb-2 ml-1 text-base">
+                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
                             Senha <Text className="text-red-500">*</Text>
                         </Text>
                         <TextInput
-                            className="bg-gray-200 rounded-2xl p-4 text-base text-gray-800"
+                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
                             placeholder=""
                             value={password}
                             onChangeText={setPassword}
