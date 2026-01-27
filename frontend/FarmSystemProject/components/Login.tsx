@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const router = useRouter();
+
     const handleLogin = () => {
         if (email && password) {
-            Alert.alert('Login', `Bem-vindo, ${email}!`);
+            router.push('/profile');
         } else {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
         }
@@ -80,9 +82,11 @@ const Login = () => {
                         <Text className="text-white text-xl font-bold">Entrar</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity className="bg-green-200 py-3 rounded-3xl items-center w-40">
-                        <Text className="text-green-900 text-lg font-semibold">Cadastre-se</Text>
-                    </TouchableOpacity>
+                    <Link href="/register" asChild>
+                        <TouchableOpacity className="bg-green-200 py-3 rounded-3xl items-center w-40">
+                            <Text className="text-green-900 text-lg font-semibold">Cadastre-se</Text>
+                        </TouchableOpacity>
+                    </Link>
                 </View>
             </ScrollView>
         </SafeAreaView>
