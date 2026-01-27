@@ -12,7 +12,7 @@ const Login = () => {
 
     const handleLogin = () => {
         if (email && password) {
-            router.push('/profile');
+            router.push('/welcome');
         } else {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
         }
@@ -74,13 +74,17 @@ const Login = () => {
                 </View>
 
                 {/* Buttons Section */}
+
                 <View className="mt-4 justify-center items-center">
-                    <TouchableOpacity
-                        className="bg-purple-500 py-6 w-60 rounded-3xl items-center shadow-md shadow-purple-200 mb-4 "
-                        onPress={handleLogin}
-                    >
-                        <Text className="text-white text-xl font-bold">Entrar</Text>
-                    </TouchableOpacity>
+                    <Link href="/welcome" asChild>
+                        <TouchableOpacity
+                            className="bg-purple-500 py-6 w-60 rounded-3xl items-center shadow-md shadow-purple-200 mb-4 "
+                            onPress={handleLogin}
+                        >
+                            <Text className="text-white text-xl font-bold">Entrar</Text>
+                        </TouchableOpacity>
+                    </Link>
+
 
                     <Link href="/register" asChild>
                         <TouchableOpacity className="bg-green-200 py-3 rounded-3xl items-center w-40">
