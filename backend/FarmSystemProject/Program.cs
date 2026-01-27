@@ -5,6 +5,8 @@ using FarmSystemProject.Interfaces.IProductiveMonitoring;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.ProductiveMonitoringService;
+using FarmSystemProject.Interfaces;
+using FarmSystemProject.Services.ReportService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IEggService, EggService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();
 builder.Services.AddScoped<IVaccinationService, VaccinationService>();
+builder.Services.AddScoped<IMortalityReportService, MortalityReportService>();
 
 QuestPDF.Settings.License = LicenseType.Community;
 

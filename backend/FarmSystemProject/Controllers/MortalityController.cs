@@ -1,5 +1,6 @@
 ﻿using FarmSystemProject.DTOs.HealthMonitoringDTO;
 using FarmSystemProject.DTOs.ProductiveMonitoringDTO;
+using FarmSystemProject.Interfaces;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,11 @@ namespace FarmSystemProject.Controllers;
 public class MortalityController : ControllerBase
 {
     private readonly IMortalityService _mortalityService;
-    public MortalityController(IMortalityService mortalityService)
+    private readonly IMortalityReportService _mortalityReportService;
+    public MortalityController(IMortalityService mortalityService, IMortalityReportService mortalityReportService)
     {
         _mortalityService = mortalityService;
+        _mortalityReportService = mortalityReportService;
     }
     [HttpGet]
     public async Task<ActionResult<IEnumerable< MortalityDTO>>> GetAll()
@@ -44,5 +47,17 @@ public class MortalityController : ControllerBase
             new { dateDeath = result.DateDeath.ToString("yyyy-MM-dd") },
             result
         );
+    }
+    [HttpGet("report")]
+    public async Task<IActionResult> DownloadReport()
+    {
+        var pdf = await _mortalityReportService.GenerateMortalityListReport();
+        return File(pdf, "application/pdf", "Relatorio_Mortes.pdf");
+    }
+    [HttpGet("report/{dateDeath}")]
+    public async Task<IActionResult> DownloadReportDate(DateTime dateDeath)
+    {
+        var pdf = await _mortalityReportService.GenerateMortalityDateReport(dateDeath);
+        return File(pdf, "application/pdf", "Relatorio_Mortes.pdf");
     }
 }
