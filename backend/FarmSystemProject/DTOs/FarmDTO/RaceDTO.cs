@@ -1,4 +1,4 @@
-﻿namespace FarmSystemProject.DTOs;
+﻿namespace FarmSystemProject.DTOs.FarmDTO;
 public class RaceDTO
 {
     public int Id { get; set; }

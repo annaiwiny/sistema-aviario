@@ -1,9 +1,8 @@
-﻿using FarmSystemProject.DTOs;
-using FarmSystemProject.Interfaces;
+﻿using FarmSystemProject.DTOs.FarmDTO;
+using FarmSystemProject.Interfaces.IFarm;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmSystemProject.Controllers;
-
 [ApiController]
 [Route("api/[controller]")]
 public class RaceController : ControllerBase
@@ -24,7 +23,12 @@ public class RaceController : ControllerBase
     public async Task<ActionResult<RaceDTO>> GetById(int id)
     {
         var result = await _raceService.GetById(id);
-        if (result == null) return NotFound();
+        
+        if (result == null)
+        {
+            return NotFound();
+        }
+
         return Ok(result);
     }
     [HttpPost]
@@ -36,6 +40,11 @@ public class RaceController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, RaceDTO raceDto)
     {
+        if (id != raceDto.Id)
+        {
+            return BadRequest("O ID da URL é diferente do ID do corpo");
+        }
+
         await _raceService.Update(id, raceDto);
         return NoContent();
     }

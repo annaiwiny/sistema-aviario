@@ -1,6 +1,6 @@
-﻿using FarmSystemProject.DTOs;
+﻿using FarmSystemProject.DTOs.FarmDTO;
 
-namespace FarmSystemProject.Interfaces;
+namespace FarmSystemProject.Interfaces.IFarm;
 public interface IRaceService
 {
     Task<IEnumerable<RaceDTO>> GetAll();

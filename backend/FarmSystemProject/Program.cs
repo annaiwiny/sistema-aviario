@@ -1,11 +1,10 @@
 using FarmSystemProject.Data;
-using FarmSystemProject.Interfaces;
-using FarmSystemProject.Middlewares;
-using FarmSystemProject.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using FarmSystemProject.Interfaces.IFarm;
+using FarmSystemProject.Interfaces.IProductiveMonitoring;
+using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Services.HelthMonitoringService;
+using FarmSystemProject.Services.ProductiveMonitoringService;
+using FarmSystemProject.Services.FarmService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,30 +50,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<IRaceService, RaceService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings["Key"]!)
-            ),
-            ClockSkew = TimeSpan.Zero
-        };
-    });
+builder.Services.AddScoped<IEggService, EggService>();
+builder.Services.AddScoped<IMortalityService, MortalityService>();
 
 var app = builder.Build();
 
