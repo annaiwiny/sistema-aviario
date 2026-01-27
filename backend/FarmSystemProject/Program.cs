@@ -5,6 +5,8 @@ using FarmSystemProject.Interfaces.IHealthMonitoring;
 using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.ProductiveMonitoringService;
 using FarmSystemProject.Services.FarmService;
+using Microsoft.EntityFrameworkCore;
+using FarmSystemProject.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
