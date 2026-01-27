@@ -72,16 +72,16 @@ const Login = () => {
                 </View>
 
                 {/* Buttons Section */}
-                <View className="mt-4">
+                <View className="mt-4 justify-center items-center">
                     <TouchableOpacity
-                        className="bg-purple-500 py-4 rounded-full items-center shadow-lg shadow-purple-200 mb-4"
+                        className="bg-purple-500 py-6 w-60 rounded-3xl items-center shadow-md shadow-purple-200 mb-4 "
                         onPress={handleLogin}
                     >
                         <Text className="text-white text-xl font-bold">Entrar</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity className="bg-green-200 py-4 rounded-full items-center">
-                        <Text className="text-green-900 text-lg font-bold">Cadastre-se</Text>
+                    <TouchableOpacity className="bg-green-200 py-3 rounded-3xl items-center w-40">
+                        <Text className="text-green-900 text-lg font-semibold">Cadastre-se</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
