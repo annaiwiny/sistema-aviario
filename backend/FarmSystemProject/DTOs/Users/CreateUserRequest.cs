@@ -4,38 +4,30 @@ namespace FarmSystemProject.DTOs.Users;
 
 public class CreateUserRequest
 {
-    [Required(ErrorMessage = "Nome é obrigatório")]
-    [MaxLength(255, ErrorMessage = "Nome deve ter no máximo 255 caracteres")]
-    public string Name { get; set; }
-
-    [Required(ErrorMessage = "Data de nascimento é obrigatória")]
-    [DataType(DataType.Date)]
-    public DateTime BirthDate { get; set; }
-
     [Required(ErrorMessage = "E-mail é obrigatório")]
     [EmailAddress(ErrorMessage = "E-mail inválido")]
     [MaxLength(255, ErrorMessage = "Email deve ter no máximo 255 caracteres")]
-    public string Email { get; set; }
+    public string Email { get; set; } = null!;
 
     [Required(ErrorMessage = "Senha é obrigatória")]
     [MinLength(8, ErrorMessage = "Senha deve ter no mínimo 8 caracteres")]
     [MaxLength(255, ErrorMessage = "Senha deve ter no máximo 255 caracteres")]
-    public string Password { get; set; }
+    public string Password { get; set; } = null!;
 
     [Required(ErrorMessage = "CPF é obrigatório")]
-    [MinLength(11, ErrorMessage = "CPF deve conter exatamente 11 caracteres")]
-    [MaxLength(11, ErrorMessage = "CPF deve conter exatamente 11 caracteres")]
-    public string Cpf { get; set; }
+    [MinLength(11, ErrorMessage = "CPF inválido")]
+    [MaxLength(14, ErrorMessage = "CPF inválido")]
+    public string Cpf { get; set; } = null!;
 
-    [MaxLength(30, ErrorMessage = "Estado deve ter no máximo 30 caracteres")]
-    public string? State { get; set; }
+    [Required(ErrorMessage = "Estado é obrigatório")]
+    [MaxLength(255, ErrorMessage = "Estado deve ter no máximo 255 caracteres")]
+    public string State { get; set; } = null!;
 
-    [MaxLength(40, ErrorMessage = "Cidade deve ter no máximo 40 caracteres")]
-    public string? City { get; set; }
+    [Required(ErrorMessage = "Cidade é obrigatório")]
+    [MaxLength(255, ErrorMessage = "Cidade deve ter no máximo 255 caracteres")]
+    public string City { get; set; } = null!;
 
-    [MaxLength(40, ErrorMessage = "Endereço deve ter no máximo 40 caracteres")]
-    public string? Address { get; set; }
-
-    [MaxLength(15, ErrorMessage = "Telefone deve ter no máximo 15 caracteres")]
-    public string? Phone { get; set; }
+    [Required(ErrorMessage = "Telefone é obrigatório")]
+    [MaxLength(20, ErrorMessage = "Telefone inválido")]
+    public string Phone { get; set; } = null!;
 }

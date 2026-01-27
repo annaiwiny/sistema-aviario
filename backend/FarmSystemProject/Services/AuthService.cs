@@ -67,9 +67,12 @@ public class AuthService : IAuthService
             User = new UserResponse
             {
                 Id = user.Id,
-                Name = user.Name,
                 Email = user.Email,
-                Type = user.Type.ToString()
+                Cpf = user.Cpf,
+                Type = user.Type.ToString(),
+                State = user.State,
+                City = user.City,
+                Phone = user.Phone
             }
         };
     }

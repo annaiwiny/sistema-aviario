@@ -18,9 +18,6 @@ public class UserService : IUserService
 
     public async Task<UserResponse> Create(CreateUserRequest request)
     {
-        if (request.BirthDate > DateTime.Today)
-            throw new BusinessException("Data de nascimento não pode ser no futuro");
-
         if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             throw new BusinessException("E-mail já cadastrado");
 
@@ -29,15 +26,12 @@ public class UserService : IUserService
 
         var user = new User
         {
-            Name = request.Name,
-            BirthDate = request.BirthDate,
             Email = request.Email,
             Password = BCrypt.Net.BCrypt.HashPassword(request.Password), // Hash da senha com Bcrypt
             Cpf = request.Cpf,
             Type = UserType.Farmer,
             State = request.State,
             City = request.City,
-            Address = request.Address,
             Phone = request.Phone
         };
 
@@ -47,27 +41,27 @@ public class UserService : IUserService
         return new UserResponse
         {
             Id = user.Id,
-            Name = user.Name,
             Email = user.Email,
-            Type = user.Type.ToString()
+            Cpf = user.Cpf,
+            Type = user.Type.ToString(),
+            State = user.State,
+            City = user.City,
+            Phone = user.Phone
         };
     }
 
-    public async Task<UserProfileResponse> Read(int id)
+    public async Task<UserResponse> Read(int id)
     {
         var user = await _context.Users
             .Where(u => u.Id == id)
-            .Select(u => new UserProfileResponse
+            .Select(u => new UserResponse
             {
                 Id = u.Id,
-                Name = u.Name,
-                BirthDate = u.BirthDate,
                 Email = u.Email,
                 Cpf = u.Cpf,
                 Type = u.Type.ToString(),
                 State = u.State,
                 City = u.City,
-                Address = u.Address,
                 Phone = u.Phone
             })
             .FirstOrDefaultAsync();
@@ -83,21 +77,10 @@ public class UserService : IUserService
         if (user == null)
             throw new NotFoundException("Usuário não encontrado");
 
-        if (request.Name != null)
-            user.Name = request.Name;
-
-        if (request.BirthDate.HasValue)
-        {
-            if (request.BirthDate.Value > DateTime.Today)
-                throw new BusinessException("Data de nascimento não pode ser no futuro");
-
-            user.BirthDate = request.BirthDate.Value;
-        }
-
         if (request.Email != null)
         {
             if (await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != userId))
-                throw new BusinessException("E-mail já cadastrado por outro usuário");
+                throw new BusinessException("E-mail já cadastrado");
 
             user.Email = request.Email;
         }
@@ -105,7 +88,7 @@ public class UserService : IUserService
         if (request.Cpf != null)
         {
             if (await _context.Users.AnyAsync(u => u.Cpf == request.Cpf && u.Id != userId))
-                throw new BusinessException("CPF já cadastrado por outro usuário");
+                throw new BusinessException("CPF já cadastrado");
 
             user.Cpf = request.Cpf;
         }
@@ -116,9 +99,6 @@ public class UserService : IUserService
         if (request.City != null)
             user.City = request.City;
 
-        if (request.Address != null)
-            user.Address = request.Address;
-
         if (request.Phone != null)
             user.Phone = request.Phone;
 
@@ -127,9 +107,12 @@ public class UserService : IUserService
         return new UserResponse
         {
             Id = user.Id,
-            Name = user.Name,
             Email = user.Email,
-            Type = user.Type.ToString()
+            Cpf = user.Cpf,
+            Type = user.Type.ToString(),
+            State = user.State,
+            City = user.City,
+            Phone = user.Phone
         };
     }
 

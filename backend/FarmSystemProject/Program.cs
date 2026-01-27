@@ -1,15 +1,18 @@
 using FarmSystemProject.Data;
-using FarmSystemProject.Interfaces.IFarm;
-using FarmSystemProject.Interfaces.IProductiveMonitoring;
-using FarmSystemProject.Interfaces.IHealthMonitoring;
-using FarmSystemProject.Services.HelthMonitoringService;
-using FarmSystemProject.Services.ProductiveMonitoringService;
-using FarmSystemProject.Services.FarmService;
-using Microsoft.EntityFrameworkCore;
-using FarmSystemProject.Middlewares;
-
 using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IFarm;
+using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Interfaces.IProductiveMonitoring;
+using FarmSystemProject.Middlewares;
 using FarmSystemProject.Services;
+using FarmSystemProject.Services.FarmService;
+using FarmSystemProject.Services.HelthMonitoringService;
+using FarmSystemProject.Services.Interfaces.IFarm;
+using FarmSystemProject.Services.ProductiveMonitoringService;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +77,27 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IFarmService, FarmService>();
+
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings["Key"]!)
+            ),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
 var app = builder.Build();
 
