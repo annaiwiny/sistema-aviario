@@ -2,22 +2,22 @@
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using FarmSystemProject.Interfaces;
-using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Interfaces.IProductiveMonitoring;
 
 namespace FarmSystemProject.Services.ReportService;
 
-public class MortalityReportService : IMortalityReportService
+public class EggReportService : IEggReportService
 {
-    private readonly IMortalityService _mortalityService;
+    private readonly IEggService _eggService;
 
-    public MortalityReportService(IMortalityService mortalityService)
+    public EggReportService(IEggService eggService)
     {
-        _mortalityService = mortalityService;
+        _eggService = eggService;
     }
 
-    public async Task<byte[]> GenerateMortalityListReport()
+    public async Task<byte[]> GenerateEggListReport()
     {
-        var mortality = await _mortalityService.GetAll();
+        var egg = await _eggService.GetAll();
 
         var document = Document.Create(container =>
         {
@@ -29,7 +29,7 @@ public class MortalityReportService : IMortalityReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório de Mortalidade")
+                    row.RelativeItem().Text("Relatório de Produção de Ovos")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -41,31 +41,25 @@ public class MortalityReportService : IMortalityReportService
                     table.ColumnsDefinition(columns =>
                     {
                         columns.ConstantColumn(50);
-                        columns.ConstantColumn(50);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn();
-                        columns.ConstantColumn(50);
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade da Morte").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade de corte").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Motivo").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
                     });
 
-                    foreach (var mortality in mortality)
+                    foreach (var collectegg in egg)
                     {
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Id.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DateDeath.ToString("dd/MM/yyyy"));
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DeathQuantity.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.CutQuantity.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Reason);   
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.LotId.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.Id.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectDate.ToString("dd/MM/yyyy"));
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectQuantity.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.LotId.ToString());
                     }
                 });
 
@@ -79,9 +73,9 @@ public class MortalityReportService : IMortalityReportService
 
         return document.GeneratePdf();
     }
-    public async Task<byte[]> GenerateMortalityDateReport(DateTime dateDeath)
+    public async Task<byte[]> GenerateEggDateReport(DateTime collectDate)
     {
-        var mortality = await _mortalityService.GetByDate(dateDeath);
+        var egg = await _eggService.GetByDate(collectDate);
 
         var document = Document.Create(container =>
         {
@@ -104,34 +98,28 @@ public class MortalityReportService : IMortalityReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(50); 
-                        columns.ConstantColumn(50);   
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
                         columns.ConstantColumn(50);
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade da Morte").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade de corte").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Motivo").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
                     });
 
-                    foreach (var mortality in mortality)
+                    foreach (var collectegg in egg)
                     {
-                        if(mortality.DateDeath.Date == dateDeath)
+                        if (collectegg.CollectDate.Date == collectDate.Date)
                         {
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Id.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DateDeath.ToString("dd/MM/yyyy"));
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DeathQuantity.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.CutQuantity.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Reason);
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.LotId.ToString());
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.Id.ToString());
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectDate.ToString("dd/MM/yyyy"));
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectQuantity.ToString());
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.LotId.ToString());
                         }
                     }
                 });

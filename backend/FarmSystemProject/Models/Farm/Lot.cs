@@ -10,12 +10,10 @@ public class Lot
     public DateTime AccommodationDate { get; set; }
     [Required]
     public int RaceQuantity { get; set; }
-    [Required]
-    public int RaceId { get; set; }
+    [Required, MaxLength(50)]
+    public string Race { get; set; }
     [Required]
     public int FarmId { get; set; }
-    [ForeignKey("RaceId")]
-    public Race Race { get; set; }
     [ForeignKey("FarmId")]
     public Farm Farm { get; set; }
 }

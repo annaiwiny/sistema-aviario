@@ -1,6 +1,7 @@
-﻿namespace FarmSystemProject.Interfaces.Report
+﻿namespace FarmSystemProject.Interfaces;
+
+public interface IVaccinationReportService
 {
-    public class Class
-    {
-    }
+    Task<byte[]> GenerateVaccinationListReport();
+    Task<byte[]> GenerateVaccinationDateReport(DateTime applicationDate);
 }

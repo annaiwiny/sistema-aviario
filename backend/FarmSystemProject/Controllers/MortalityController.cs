@@ -10,9 +10,8 @@ namespace FarmSystemProject.Controllers;
 public class MortalityController : ControllerBase
 {
     private readonly IMortalityService _mortalityService;
-    private readonly IMortalityReportService _mortalityReportService; // Corrigido o tipo
-
-    public MortalityController(IMortalityService mortalityService, IMortalityReportService mortalityReportService) // Corrigido o construtor
+    private readonly IMortalityReportService _mortalityReportService;
+    public MortalityController(IMortalityService mortalityService, IMortalityReportService mortalityReportService)
     {
         _mortalityService = mortalityService;
         _mortalityReportService = mortalityReportService;
@@ -49,11 +48,16 @@ public class MortalityController : ControllerBase
             result
         );
     }
-    // Começa aqui a rota do relatório
     [HttpGet("report")]
     public async Task<IActionResult> DownloadReport()
     {
         var pdf = await _mortalityReportService.GenerateMortalityListReport();
+        return File(pdf, "application/pdf", "Relatorio_Mortes.pdf");
+    }
+    [HttpGet("report/{dateDeath}")]
+    public async Task<IActionResult> DownloadReportDate(DateTime dateDeath)
+    {
+        var pdf = await _mortalityReportService.GenerateMortalityDateReport(dateDeath);
         return File(pdf, "application/pdf", "Relatorio_Mortes.pdf");
     }
 }

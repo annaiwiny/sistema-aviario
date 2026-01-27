@@ -9,6 +9,8 @@ namespace FarmSystemProject.Controllers;
 public class EggController : ControllerBase
 {
     private readonly IEggService _eggService;
+    private object _eggReportService;
+
     public EggController(IEggService eggService)
     {
         _eggService = eggService;
@@ -44,5 +46,17 @@ public class EggController : ControllerBase
             new { collectDate = result.CollectDate.ToString("yyyy-MM-dd") },
             result
         );
+    }
+    [HttpGet("report")]
+    public async Task<IActionResult> DownloadReport()
+    {
+        var pdf = await _eggReportService.GenerateEggListReport(); 
+        return File(pdf, "application/pdf", "Relatorio_Produção de Ovos.pdf");
+    }
+    [HttpGet("report/{collectDate}")]
+    public async Task<IActionResult> DownloadReportDate(DateTime collectDate)
+    {
+        var pdf = await _eggReportService.GenerateEggDateReport(collectDate);
+        return File(pdf, "application/pdf", "Relatorio_Produção de Ovos.pdf");
     }
 }

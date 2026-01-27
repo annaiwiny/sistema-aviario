@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace FarmSystemProject.Controllers;
 [ApiController]
 [Route("api/[controller]")]
-public class RaceController(IRaceService raceService, IRaceReportService raceReportService) : ControllerBase
+public class RaceController : ControllerBase
 {
-    private readonly IRaceService _raceService = raceService;
-    private readonly IRaceReportService _raceReportService = raceReportService;
-
+    private readonly IRaceService _raceService;
+    public RaceController(IRaceService raceService)
+    {
+        _raceService = raceService;
+    }
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RaceDTO>>> GetAll()
     {
