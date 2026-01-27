@@ -6,8 +6,8 @@ using System.Security.Claims;
 
 namespace FarmSystemProject.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
 public class FarmController : ControllerBase
 {
     private readonly IFarmService _farmService;
@@ -17,8 +17,8 @@ public class FarmController : ControllerBase
         _farmService = farmService;
     }
 
-    [HttpPost]
     [Authorize]
+    [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateFarmRequest request)
     {
         var userId = GetUserIdFromToken();
@@ -27,8 +27,8 @@ public class FarmController : ControllerBase
         return CreatedAtAction(nameof(GetMyFarm), new { }, response);
     }
 
-    [HttpGet("me")]
     [Authorize]
+    [HttpGet("me")]
     public async Task<IActionResult> GetMyFarm()
     {
         var userId = GetUserIdFromToken();
