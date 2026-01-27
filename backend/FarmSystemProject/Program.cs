@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using FarmSystemProject.Data;
 using FarmSystemProject.Interfaces.IFarm;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
@@ -19,6 +20,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IEggService, EggService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();
+builder.Services.AddScoped<IVaccinationService, VaccinationService>();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
 

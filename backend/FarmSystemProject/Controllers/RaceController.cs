@@ -1,4 +1,5 @@
 ﻿using FarmSystemProject.DTOs.FarmDTO;
+using FarmSystemProject.Interfaces;
 using FarmSystemProject.Interfaces.IFarm;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,6 @@ namespace FarmSystemProject.Controllers;
 public class RaceController : ControllerBase
 {
     private readonly IRaceService _raceService;
-
     public RaceController(IRaceService raceService)
     {
         _raceService = raceService;
