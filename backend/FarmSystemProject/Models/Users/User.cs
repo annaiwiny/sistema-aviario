@@ -8,25 +8,32 @@ public class User
     public int Id { get; set; }
 
     [MaxLength(255)]
+    [Required]
     public string Email { get; set; } = null!;
 
     [MinLength(8)]
     [MaxLength(255)]
+    [Required]
     public string Password { get; set; } = null!;
 
     [MinLength(11)]
     [MaxLength(14)]
+    [Required]
     public string Cpf { get; set; } = null!;
 
+    [Required]
     public UserType Type { get; set; }
 
     [MaxLength(255)]
+    [Required]
     public string State { get; set; } = null!;
 
     [MaxLength(255)]
+    [Required]
     public string City { get; set; } = null!;
 
     [MaxLength(20)]
+    [Required]
     public string Phone { get; set; } = null!;
 
     public int FailedLoginAttempts { get; set; } = 0;
