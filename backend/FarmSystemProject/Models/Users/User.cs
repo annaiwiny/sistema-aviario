@@ -8,11 +8,6 @@ public class User
     public int Id { get; set; }
 
     [MaxLength(255)]
-    public string Name { get; set; } = null!;
-
-    public DateTime BirthDate { get; set; }
-
-    [MaxLength(255)]
     public string Email { get; set; } = null!;
 
     [MinLength(8)]
@@ -20,22 +15,19 @@ public class User
     public string Password { get; set; } = null!;
 
     [MinLength(11)]
-    [MaxLength(11)]
+    [MaxLength(14)]
     public string Cpf { get; set; } = null!;
 
     public UserType Type { get; set; }
 
-    [MaxLength(30)]
-    public string? State { get; set; }
+    [MaxLength(255)]
+    public string State { get; set; } = null!;
 
-    [MaxLength(40)]
-    public string? City { get; set; }
+    [MaxLength(255)]
+    public string City { get; set; } = null!;
 
-    [MaxLength(40)]
-    public string? Address { get; set; }
-
-    [MaxLength(15)]
-    public string? Phone { get; set; }
+    [MaxLength(20)]
+    public string Phone { get; set; } = null!;
 
     public int FailedLoginAttempts { get; set; } = 0;
     public DateTime? LockoutEnd { get; set; }

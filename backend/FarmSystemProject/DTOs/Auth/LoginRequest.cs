@@ -10,6 +10,7 @@ public class LoginRequest
     public string Email { get; set; } = null!;
 
     [Required(ErrorMessage = "Senha é obrigatória")]
+    [MinLength(8, ErrorMessage = "Senha deve ter no mínimo 8 caracteres")]
     [MaxLength(255, ErrorMessage = "Senha deve ter no máximo 255 caracteres")]
     public string Password { get; set; } = null!;
 }
