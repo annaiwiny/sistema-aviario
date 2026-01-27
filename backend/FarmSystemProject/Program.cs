@@ -7,6 +7,8 @@ using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.ProductiveMonitoringService;
 using FarmSystemProject.Interfaces;
 using FarmSystemProject.Services.ReportService;
+using FarmSystemProject.Interfaces.IFarm;
+using FarmSystemProject.Services.FarmService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,7 @@ builder.Services.AddScoped<IEggService, EggService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();
 builder.Services.AddScoped<IVaccinationService, VaccinationService>();
 builder.Services.AddScoped<IMortalityReportService, MortalityReportService>();
+builder.Services.AddScoped<ILotService, LotService>();
 
 QuestPDF.Settings.License = LicenseType.Community;
 

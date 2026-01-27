@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Farm> Farms { get; set; }
     public DbSet<Lot> Lots { get; set; }
+    public DbSet<LotItem> LotItems { get; set; }
     public DbSet<Mortality> Mortalities { get; set; }
     public DbSet<Vaccination> Vaccinations { get; set; }
     public DbSet<Feed> Feeds { get; set; }
