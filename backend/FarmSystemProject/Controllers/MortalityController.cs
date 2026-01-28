@@ -1,5 +1,5 @@
 ﻿using FarmSystemProject.DTOs.HealthMonitoringDTO;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

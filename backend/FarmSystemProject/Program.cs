@@ -16,6 +16,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
 using System.Text;
+using FarmSystemProject.Interfaces.IReportService;
+using FarmSystemProject.Services.HealthMonitoringService;
 
 
 var builder = WebApplication.CreateBuilder(args);

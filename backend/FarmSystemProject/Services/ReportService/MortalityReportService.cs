@@ -1,7 +1,7 @@
 ﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 
 namespace FarmSystemProject.Services.ReportService;
@@ -41,7 +41,7 @@ public class MortalityReportService : IMortalityReportService
                     table.ColumnsDefinition(columns =>
                     {
                         columns.ConstantColumn(40);
-                        columns.ConstantColumn(70);
+                        columns.ConstantColumn(85);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn(2);

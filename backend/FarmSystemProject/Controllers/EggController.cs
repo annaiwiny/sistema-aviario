@@ -1,7 +1,6 @@
 ﻿using FarmSystemProject.DTOs.ProductiveMonitoringDTO;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
-using FarmSystemProject.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmSystemProject.Controllers;

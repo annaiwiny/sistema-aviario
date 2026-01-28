@@ -1,7 +1,7 @@
 ﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
 
 namespace FarmSystemProject.Services.ReportService;

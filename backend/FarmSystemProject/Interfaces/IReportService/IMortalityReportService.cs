@@ -1,4 +1,4 @@
-﻿namespace FarmSystemProject.Interfaces;
+﻿namespace FarmSystemProject.Interfaces.IReportService;
 
 public interface IMortalityReportService
 {
