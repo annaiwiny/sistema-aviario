@@ -6,7 +6,6 @@ namespace FarmSystemProject.Models.Lots;
 public class Lot
 {
     [Key]
-
     public int Id { get; set; }
     [Required]
     public DateTime AccommodationDate { get; set; }

@@ -1,63 +1,75 @@
 ﻿using FarmSystemProject.DTOs.HealthMonitoringDTO;
-using FarmSystemProject.DTOs.ProductiveMonitoringDTO;
 using FarmSystemProject.Interfaces;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FarmSystemProject.Controllers;
+
+[Authorize]
+[Route("api/lots/{lotId}/mortalities")]
 [ApiController]
-[Route("api/[Controller]")]
 public class MortalityController : ControllerBase
 {
-    private readonly IMortalityService _mortalityService;
-    private readonly IMortalityReportService _mortalityReportService;
-    public MortalityController(IMortalityService mortalityService, IMortalityReportService mortalityReportService)
-    {
-        _mortalityService = mortalityService;
-        _mortalityReportService = mortalityReportService;
-    }
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<MortalityDTO>>> GetAll()
-    {
-        var mortality = await _mortalityService.GetAll();
-        return Ok(mortality);
-    }
-    [HttpGet("{dateDeath}")]
-    public async Task<ActionResult<MortalityDTO>> GetByDate(DateTime dateDeath)
-    {
-        var results = await _mortalityService.GetByDate(dateDeath);
-        if (results == null || !results.Any())
-        {
-            return NotFound("Nenhuma morte encontrada para esta data.");
-        }
+    private readonly IMortalityService _service;
+    private readonly IMortalityReportService _reportService;
 
-        var totalDeath = results.Sum(m => m.DeathQuantity);
-        return Ok(new
-        {
-            Data = dateDeath.ToShortDateString(),
-            TotalMortes = totalDeath
-        });
+    public MortalityController(IMortalityService service, IMortalityReportService reportService)
+    {
+        _service = service;
+        _reportService = reportService;
     }
+
     [HttpPost]
-    public async Task<ActionResult<MortalityDTO>> Create(MortalityDTO mortalityDto)
+    public async Task<ActionResult<MortalityResponse>> Create(int lotId, [FromBody] CreateMortalityRequest request)
     {
-        var result = await _mortalityService.Create(mortalityDto);
-        return CreatedAtAction(
-            nameof(GetByDate),
-            new { dateDeath = result.DateDeath.ToString("yyyy-MM-dd") },
-            result
-        );
+        var userId = GetUserIdFromToken();
+        var response = await _service.Create(lotId, userId, request);
+        return CreatedAtAction(nameof(GetAll), new { lotId }, response);
     }
-    [HttpGet("report")]
-    public async Task<IActionResult> DownloadReport()
+
+    // Como usar: /api/lots/5/mortalities/summary?date=2026-05-20
+    [HttpGet("summary")]
+    public async Task<ActionResult<MortalityDateSummary>> GetSummary(int lotId, [FromQuery] DateTime date)
     {
-        var pdf = await _mortalityReportService.GenerateMortalityListReport();
-        return File(pdf, "application/pdf", "Relatorio_Mortes.pdf");
+        var userId = GetUserIdFromToken();
+        var summary = await _service.GetSummaryByDate(lotId, userId, date);
+        return Ok(summary);
     }
-    [HttpGet("report/{dateDeath}")]
-    public async Task<IActionResult> DownloadReportDate(DateTime dateDeath)
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<MortalityResponse>>> GetAll(int lotId)
     {
-        var pdf = await _mortalityReportService.GenerateMortalityDateReport(dateDeath);
-        return File(pdf, "application/pdf", "Relatorio_Mortes.pdf");
+        var userId = GetUserIdFromToken();
+        var response = await _service.GetAllByLotId(lotId, userId);
+        return Ok(response);
+    }
+
+    [HttpGet("pdf")]
+    public async Task<IActionResult> DownloadReport(int lotId)
+    {
+        var userId = GetUserIdFromToken();
+        var fileBytes = await _reportService.GenerateMortalityListReport(lotId, userId);
+        return File(fileBytes, "application/pdf", $"Mortalidade_Lote_{lotId}.pdf");
+    }
+
+    // Como usar: /api/lots/1/mortalities/pdf/daily?date=2026-05-20
+    [HttpGet("pdf/daily")]
+    public async Task<IActionResult> DownloadDailyReport(int lotId, [FromQuery] DateTime date)
+    {
+        var userId = GetUserIdFromToken();
+        var fileBytes = await _reportService.GenerateMortalityDateReport(lotId, userId, date);
+        return File(fileBytes, "application/pdf", $"Mortalidade_{date:yyyyMMdd}.pdf");
+    }
+
+    private int GetUserIdFromToken()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+            throw new UnauthorizedAccessException("Token inválido");
+
+        return int.Parse(userId);
     }
 }
