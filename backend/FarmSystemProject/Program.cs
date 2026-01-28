@@ -9,9 +9,11 @@ using FarmSystemProject.Services.FarmService;
 using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.Interfaces.IFarm;
 using FarmSystemProject.Services.ProductiveMonitoringService;
+using FarmSystemProject.Services.ReportService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using QuestPDF.Infrastructure;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -69,15 +71,21 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IEggService, EggService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();
+builder.Services.AddScoped<IVaccinationService, VaccinationService>();
+builder.Services.AddScoped<ILotService, LotService>();
+builder.Services.AddScoped<IVaccinationReportService, VaccinationReportService>();
+builder.Services.AddScoped<IMortalityReportService, MortalityReportService>();
+builder.Services.AddScoped<IEggReportService, EggReportService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFarmService, FarmService>();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services
