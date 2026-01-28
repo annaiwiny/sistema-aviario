@@ -1,7 +1,8 @@
 ﻿using FarmSystemProject.Data;
 using FarmSystemProject.DTOs.FarmDTO;
+using FarmSystemProject.DTOs.Lots;
 using FarmSystemProject.Exceptions;
-using FarmSystemProject.Models.Farm;
+using FarmSystemProject.Models.Farms;
 using FarmSystemProject.Services.Interfaces.IFarm;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +17,7 @@ public class FarmService : IFarmService
         _context = context;
     }
 
-    public async Task<FarmResponse> CreateAsync(int ownerId, CreateFarmRequest request)
+    public async Task<FarmResponse> Create(int ownerId, CreateFarmRequest request)
     {
         if(await _context.Farms.AnyAsync(f => f.OwnerId == ownerId))
         {
@@ -41,7 +42,7 @@ public class FarmService : IFarmService
         };
     }
 
-    public async Task<FarmResponse?> GetByOwnerIdAsync(int ownerId)
+    public async Task<FarmResponse> GetByOwnerId(int ownerId)
     {
         var farm = await _context.Farms
             .AsNoTracking()

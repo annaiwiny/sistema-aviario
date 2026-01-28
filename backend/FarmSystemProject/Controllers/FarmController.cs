@@ -22,7 +22,7 @@ public class FarmController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateFarmRequest request)
     {
         var userId = GetUserIdFromToken();
-        var response = await _farmService.CreateAsync(userId, request);
+        var response = await _farmService.Create(userId, request);
 
         return CreatedAtAction(nameof(GetMyFarm), new { }, response);
     }
@@ -32,7 +32,7 @@ public class FarmController : ControllerBase
     public async Task<IActionResult> GetMyFarm()
     {
         var userId = GetUserIdFromToken();
-        var response = await _farmService.GetByOwnerIdAsync(userId);
+        var response = await _farmService.GetByOwnerId(userId);
 
         return Ok(response);
     }

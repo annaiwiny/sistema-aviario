@@ -1,6 +1,6 @@
 using FarmSystemProject.Data;
 using FarmSystemProject.Interfaces;
-using FarmSystemProject.Interfaces.IFarm;
+using FarmSystemProject.Interfaces.ILots;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
 using FarmSystemProject.Middlewares;
@@ -8,6 +8,7 @@ using FarmSystemProject.Services;
 using FarmSystemProject.Services.FarmService;
 using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.Interfaces.IFarm;
+using FarmSystemProject.Services.LotsService;
 using FarmSystemProject.Services.ProductiveMonitoringService;
 using FarmSystemProject.Services.ReportService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

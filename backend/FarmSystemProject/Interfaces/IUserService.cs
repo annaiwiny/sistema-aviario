@@ -6,5 +6,5 @@ public interface IUserService
 {
     Task<UserResponse> Create(CreateUserRequest request);
     Task<UserResponse> Read(int id);
-    Task<UserResponse?> Update(int userId, UpdateUserRequest request);
+    Task<UserResponse> Update(int userId, UpdateUserRequest request);
 }

@@ -4,6 +4,6 @@ namespace FarmSystemProject.Services.Interfaces.IFarm;
 
 public interface IFarmService
 {
-    Task<FarmResponse> CreateAsync(int ownerId, CreateFarmRequest request);
-    Task<FarmResponse?> GetByOwnerIdAsync(int ownerId);
+    Task<FarmResponse> Create(int ownerId, CreateFarmRequest request);
+    Task<FarmResponse> GetByOwnerId(int ownerId);
 }

@@ -1,6 +1,4 @@
-﻿using FarmSystemProject.Models.Farm;
-
-namespace FarmSystemProject.DTOs.ProductiveMonitoringDTO;
+﻿namespace FarmSystemProject.DTOs.ProductiveMonitoringDTO;
 public class EggDTO
 {
     public int Id { get; set; }

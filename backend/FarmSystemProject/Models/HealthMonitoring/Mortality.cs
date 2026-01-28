@@ -1,4 +1,4 @@
-﻿using FarmSystemProject.Models.Farm;
+﻿using FarmSystemProject.Models.Lots;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
