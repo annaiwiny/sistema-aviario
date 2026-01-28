@@ -116,19 +116,17 @@ export default function DashboardScreen() {
                                     key={lot.id}
                                     className="bg-purple-500 rounded-xl p-6 mb-4 shadow-lg shadow-purple-200 h-32 justify-between"
                                     activeOpacity={0.8}
+                                    onPress={() => router.push(`/lot-details/${lot.id}`)}
                                 >
-                                    <View className="flex-row justify-between items-start">
-                                        <Text className="text-white text-xl font-bold tracking-widest uppercase">
+                                    <View className="flex-row justify-center items-center">
+                                        <Text className="text-white text-xl font-bold tracking-widest uppercase p-5">
                                             LOTE {String(lot.id).padStart(2, '0')}
-                                        </Text>
-                                        <Text className="text-white/80 text-sm font-medium">
-                                            {new Date(lot.accommodationDate).toLocaleDateString('pt-BR')}
                                         </Text>
                                     </View>
 
                                     <View>
                                         <Text className="text-white font-semibold text-lg">{lot.raceName}</Text>
-                                        <Text className="text-white/80">{lot.raceQuantity} aves</Text>
+                                        
                                     </View>
                                 </TouchableOpacity>
                             ))

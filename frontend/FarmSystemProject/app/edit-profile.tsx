@@ -11,7 +11,7 @@ export default function EditProfile() {
     const router = useRouter();
 
     // State for form fields
-    const [name, setName] = useState('');
+
     const [email, setEmail] = useState('');
     const [cpf, setCpf] = useState('');
     const [state, setState] = useState('');
@@ -39,7 +39,7 @@ export default function EditProfile() {
                 if (response.ok) {
                     const data = await response.json();
                     // Preencher campos com o que vier da API
-                    setName(data.name || '');
+
                     setEmail(data.email || '');
                     setCpf(data.cpf || '');
                     setState(data.state || '');
@@ -67,7 +67,7 @@ export default function EditProfile() {
             }
 
             const payload = {
-                name,
+
                 email,
                 cpf,
                 state,
@@ -137,15 +137,7 @@ export default function EditProfile() {
                         <ActivityIndicator size="large" color="#8B5CF6" className="mt-10" />
                     ) : (
                         <View className="space-y-4 gap-3">
-                            {/* Nome */}
-                            <View>
-                                <Text className="text-black font-bold text-base mb-1 ml-1">Nome</Text>
-                                <TextInput
-                                    className="bg-gray-200 rounded-lg px-4 py-3 text-gray-700 text-base shadow-sm"
-                                    value={name}
-                                    onChangeText={setName}
-                                />
-                            </View>
+
 
                             <View>
                                 <Text className="text-black font-bold text-base mb-1 ml-1">Email</Text>

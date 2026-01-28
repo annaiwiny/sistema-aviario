@@ -79,9 +79,8 @@ export default function CreateBatch() {
 
             const payload = {
                 accommodationDate: dateISO,
-                farmName: aviaryName || 'Meu Aviário',
-                lineages: lineages.map(l => ({
-                    raceName: l.raceName,
+                items: lineages.map(l => ({
+                    race: l.raceName,
                     quantity: parseInt(l.quantity)
                 }))
             };

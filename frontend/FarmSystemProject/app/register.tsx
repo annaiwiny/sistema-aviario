@@ -11,7 +11,7 @@ export default function Register() {
     const router = useRouter();
 
     // Form states
-    const [name, setName] = useState('');
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,7 +26,7 @@ export default function Register() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleRegister = async () => {
-        if (!name || !email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
+        if (!email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
             return;
         }
@@ -45,7 +45,7 @@ export default function Register() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name,
+
                     email,
                     password,
                     cpf,
@@ -112,18 +112,7 @@ export default function Register() {
                 {/* Form Fields */}
                 <View className="w-full space-y-4">
 
-                    {/* Nome (Adicionado pois é obrigatório na API) */}
-                    <View className="mb-4">
-                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
-                            Nome Completo
-                        </Text>
-                        <TextInput
-                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
-                            placeholder="Seu nome"
-                            value={name}
-                            onChangeText={setName}
-                        />
-                    </View>
+
 
                     {/* Email */}
                     <View className="mb-4">

@@ -9,7 +9,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@/constants/Api';
 
 interface UserData {
-    name: string;
     email: string;
     cpf: string;
     state: string;

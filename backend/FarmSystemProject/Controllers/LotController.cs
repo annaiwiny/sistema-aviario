@@ -2,6 +2,7 @@
 using FarmSystemProject.Interfaces.IFarm;
 using FarmSystemProject.Services.Interfaces.IFarm;
 using Microsoft.AspNetCore.Mvc;
+using FarmSystemProject.Exceptions;
 
 namespace FarmSystemProject.Controllers;
 
@@ -33,11 +34,24 @@ public class LotController : ControllerBase
 
         return Ok(lot);
     }
+
+
     [HttpPost]
     public async Task<ActionResult<LotDTO>> Create(LotDTO lotDto)
     {
         var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
-        var farm = await _farmService.GetByOwnerIdAsync(userId);
+        
+        FarmResponse farm;
+        try
+        {
+            farm = await _farmService.GetByOwnerIdAsync(userId);
+        }
+        catch (NotFoundException)
+        {
+            // Se nao existir granja, cria uma padrao
+            farm = await _farmService.CreateAsync(userId, new CreateFarmRequest { Name = "Meu Aviário" });
+        }
+
         if (lotDto.Items == null || !lotDto.Items.Any())
         {
             return BadRequest("O lote deve conter pelo menos uma raça e quantidade.");
