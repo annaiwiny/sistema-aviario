@@ -29,6 +29,15 @@ public class LotService : ILotService
     }
     public async Task<LotDTO> Create(LotDTO lotDto)
     {
+<<<<<<< Updated upstream
+=======
+        var farmExists = await _context.Farms.AnyAsync(f => f.Id == lotDto.FarmId);
+        if (!farmExists)
+        {
+            throw new Exception("Fazenda inválida.");
+        }
+
+>>>>>>> Stashed changes
         var lot = new Lot
         {
             AccommodationDate = lotDto.AccommodationDate,
@@ -45,7 +54,10 @@ public class LotService : ILotService
         lotDto.Id = lot.Id;
         return lotDto;
     }
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
     public async Task<LotDTO?> GetById(int id)
     {
         var lot = await _context.Lots.Include(l => l.Items).FirstOrDefaultAsync(l => l.Id == id);

@@ -17,7 +17,7 @@ public class MortalityController : ControllerBase
         _mortalityReportService = mortalityReportService;
     }
     [HttpGet]
-    public async Task<ActionResult<IEnumerable< MortalityDTO>>> GetAll()
+    public async Task<ActionResult<IEnumerable<MortalityDTO>>> GetAll()
     {
         var mortality = await _mortalityService.GetAll();
         return Ok(mortality);

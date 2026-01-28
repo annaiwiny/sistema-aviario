@@ -16,7 +16,11 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Farm> Farms { get; set; }
     public DbSet<Lot> Lots { get; set; }
+<<<<<<< Updated upstream
     public DbSet<LotItem> LotItems { get; set; }
+=======
+    public DbSet<LotItem> LotItems { get; set; }  
+>>>>>>> Stashed changes
     public DbSet<Mortality> Mortalities { get; set; }
     public DbSet<Vaccination> Vaccinations { get; set; }
     public DbSet<Feed> Feeds { get; set; }
@@ -31,7 +35,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Feed>().Property(f => f.BagValue).HasPrecision(18, 2);
         modelBuilder.Entity<Sale>().Property(s => s.UnitValue).HasPrecision(18, 2);
         modelBuilder.Entity<Sale>().Property(s => s.TotalValue).HasPrecision(18, 2);
+<<<<<<< Updated upstream
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<User>().HasIndex(u => u.Cpf).IsUnique();
+=======
+>>>>>>> Stashed changes
     }
 }

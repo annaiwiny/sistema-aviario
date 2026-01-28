@@ -64,7 +64,11 @@ public class MortalityReportService : IMortalityReportService
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DateDeath.ToString("dd/MM/yyyy"));
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DeathQuantity.ToString());
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.CutQuantity.ToString());
+<<<<<<< Updated upstream
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Reason);   
+=======
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Reason);
+>>>>>>> Stashed changes
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.LotId.ToString());
                     }
                 });
@@ -104,8 +108,13 @@ public class MortalityReportService : IMortalityReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
+<<<<<<< Updated upstream
                         columns.ConstantColumn(50); 
                         columns.ConstantColumn(50);   
+=======
+                        columns.ConstantColumn(50);
+                        columns.ConstantColumn(50);
+>>>>>>> Stashed changes
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn();
@@ -124,7 +133,11 @@ public class MortalityReportService : IMortalityReportService
 
                     foreach (var mortality in mortality)
                     {
+<<<<<<< Updated upstream
                         if(mortality.DateDeath.Date == dateDeath)
+=======
+                        if (mortality.DateDeath.Date == dateDeath)
+>>>>>>> Stashed changes
                         {
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Id.ToString());
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DateDeath.ToString("dd/MM/yyyy"));

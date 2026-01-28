@@ -1,4 +1,8 @@
 ﻿using FarmSystemProject.DTOs.HealthMonitoringDTO;
+<<<<<<< Updated upstream
+=======
+using FarmSystemProject.Interfaces;
+>>>>>>> Stashed changes
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,9 +12,20 @@ namespace FarmSystemProject.Controllers;
 public class VaccinationController : ControllerBase
 {
     private readonly IVaccinationService _vaccinationService;
+<<<<<<< Updated upstream
     public VaccinationController(IVaccinationService vaccinationService)
     {
         _vaccinationService = vaccinationService;
+=======
+    private readonly IVaccinationReportService _vaccinationReportService;
+    public VaccinationController(
+        IVaccinationService vaccinationService,
+        IVaccinationReportService vaccinationReportService
+    )
+    {
+        _vaccinationService = vaccinationService;
+        _vaccinationReportService = vaccinationReportService;
+>>>>>>> Stashed changes
     }
     [HttpGet]
     public async Task<ActionResult<IEnumerable<VaccinationDTO>>> GetAll()
@@ -30,7 +45,11 @@ public class VaccinationController : ControllerBase
         var totalApplication = results.Sum(v => v.ApplicationQuantity);
         var totalValue = results.Sum(v => v.ApplicationValue);
 
+<<<<<<< Updated upstream
         return Ok( new 
+=======
+        return Ok(new
+>>>>>>> Stashed changes
         {
             Data = applicationDate.ToShortDateString(),
             QuantidadeAplicacoes = totalApplication,
@@ -47,4 +66,20 @@ public class VaccinationController : ControllerBase
             result
         );
     }
+<<<<<<< Updated upstream
 }
+=======
+    [HttpGet("report")]
+    public async Task<IActionResult> DownloadReport()
+    {
+        var pdf = await _vaccinationReportService.GenerateVaccinationListReport();
+        return File(pdf, "application/pdf", "Relatorio_Vacinação.pdf");
+    }
+    [HttpGet("report/{applicationDate}")]
+    public async Task<IActionResult> DownloadReportDate(DateTime applicationDate)
+    {
+        var pdf = await _vaccinationReportService.GenerateVaccinationDateReport(applicationDate);
+        return File(pdf, "application/pdf", "Relatorio_Vacinação.pdf");
+    }
+}
+>>>>>>> Stashed changes
