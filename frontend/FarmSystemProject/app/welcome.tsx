@@ -4,10 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/Api';
 
 export default function WelcomeScreen() {
     const [aviaryName, setAviaryName] = useState('');
     const router = useRouter();
+
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleRegister = async () => {
         if (!aviaryName.trim()) {
@@ -15,13 +18,38 @@ export default function WelcomeScreen() {
             return;
         }
 
+        setIsLoading(true);
 
         try {
-            await AsyncStorage.setItem('aviaryName', aviaryName);
-            // Proceed to main app or next step
-            router.replace('/dashboard');
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) {
+                router.replace('/');
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/api/Farm`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ name: aviaryName })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                await AsyncStorage.setItem('aviaryName', aviaryName);
+                router.replace('/dashboard');
+            } else {
+                const errorData = await response.json();
+                Alert.alert('Erro', errorData.title || 'Falha ao criar aviário.');
+            }
+
         } catch (error) {
-            Alert.alert('Erro', 'Não foi possível salvar os dados.');
+            console.error(error);
+            Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -67,16 +95,16 @@ export default function WelcomeScreen() {
                 </View>
 
                 {/* Button Section */}
-                
-                    <View className="w-full items-center mt-10 mb-8">
-                        <TouchableOpacity
-                            className="bg-purple-500 w-full py-4 rounded-full items-center shadow-lg shadow-purple-200"
-                            onPress={handleRegister}
-                        >
-                            <Text className="text-white text-lg font-bold">Cadastrar</Text>
-                        </TouchableOpacity>
-                    </View>
-              
+
+                <View className="w-full items-center mt-10 mb-8">
+                    <TouchableOpacity
+                        className="bg-purple-500 w-full py-4 rounded-full items-center shadow-lg shadow-purple-200"
+                        onPress={handleRegister}
+                    >
+                        <Text className="text-white text-lg font-bold">Cadastrar</Text>
+                    </TouchableOpacity>
+                </View>
+
 
             </ScrollView>
         </SafeAreaView>

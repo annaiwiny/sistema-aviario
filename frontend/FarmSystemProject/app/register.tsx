@@ -5,12 +5,13 @@ import { useRouter } from 'expo-router';
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/constants/Api';
+import SuccessModal from '@/components/SuccessModal';
 
 export default function Register() {
     const router = useRouter();
 
     // Form states
-    const [name, setName] = useState('');
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -22,9 +23,10 @@ export default function Register() {
     const [address, setAddress] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleRegister = async () => {
-        if (!name || !email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
+        if (!email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
             return;
         }
@@ -43,7 +45,7 @@ export default function Register() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    name,
+
                     email,
                     password,
                     cpf,
@@ -58,17 +60,7 @@ export default function Register() {
             const data = await response.json();
 
             if (response.ok) {
-                if (Platform.OS === 'web') {
-                    // Na web, alert nao tem callback, entao forçamos o replace
-                    setTimeout(() => {
-                        window.alert('Cadastro realizado com sucesso!');
-                        router.replace('/(tabs)');
-                    }, 100);
-                } else {
-                    Alert.alert('Sucesso', 'Cadastro realizado com sucesso!', [
-                        { text: 'OK', onPress: () => router.replace('/(tabs)') }
-                    ]);
-                }
+                setShowSuccessModal(true);
             } else {
                 const errorMessage = data.message || data.title || 'Ocorreu um erro ao realizar o cadastro.';
                 Alert.alert('Erro', errorMessage);
@@ -81,6 +73,11 @@ export default function Register() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleSuccessClose = () => {
+        setShowSuccessModal(false);
+        router.replace('/(tabs)');
     };
 
     return (
@@ -115,18 +112,7 @@ export default function Register() {
                 {/* Form Fields */}
                 <View className="w-full space-y-4">
 
-                    {/* Nome (Adicionado pois é obrigatório na API) */}
-                    <View className="mb-4">
-                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
-                            Nome Completo
-                        </Text>
-                        <TextInput
-                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
-                            placeholder="Seu nome"
-                            value={name}
-                            onChangeText={setName}
-                        />
-                    </View>
+
 
                     {/* Email */}
                     <View className="mb-4">
@@ -262,6 +248,8 @@ export default function Register() {
                 </View>
 
             </ScrollView>
+
+            <SuccessModal visible={showSuccessModal} onClose={handleSuccessClose} />
         </SafeAreaView>
     );
 }

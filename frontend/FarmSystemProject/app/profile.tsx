@@ -1,17 +1,64 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { G, Path, Ellipse } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { API_URL } from '@/constants/Api';
+
+interface UserData {
+    email: string;
+    cpf: string;
+    state: string;
+    city: string;
+    phone: string;
+}
 
 export default function Profile() {
     const router = useRouter();
+    const [aviaryName, setAviaryName] = useState('Aviário');
+    const [user, setUser] = useState<UserData | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const handleLogout = () => {
-        // Implement logout logic here
+    const handleLogout = async () => {
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('userData');
         router.replace('/');
     };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const loadData = async () => {
+                try {
+                    setLoading(true);
+
+                    // 1. Aviary Name
+                    const name = await AsyncStorage.getItem('aviaryName');
+                    if (name) setAviaryName(name);
+
+                    // 2. User Data
+                    const token = await AsyncStorage.getItem('userToken');
+                    if (token) {
+                        const response = await fetch(`${API_URL}/api/User/me`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            setUser(data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar perfil', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            loadData();
+        }, [])
+    );
 
     return (
         <SafeAreaView className="flex-1 bg-white">
@@ -41,25 +88,31 @@ export default function Profile() {
 
                 {/* Info Card */}
                 <View className="bg-green-100 border-2 border-purple-400 rounded-2xl p-6 mb-10 shadow-sm">
-                    <Text className="text-black text-xl font-medium text-center mb-6">AVIÁRIO CAIPIRA</Text>
+                    {loading ? (
+                        <ActivityIndicator color="#8B5CF6" />
+                    ) : (
+                        <>
+                            <Text className="text-black text-xl font-medium text-center mb-6 uppercase">{aviaryName}</Text>
 
-                    <View className="space-y-3">
-                        <Text className="text-black text-base">
-                            <Text className="font-bold">EMAIL: </Text>joão@gmail.com
-                        </Text>
-                        <Text className="text-black text-base">
-                            <Text className="font-bold">CPF: </Text>000.000.999-00
-                        </Text>
-                        <Text className="text-black text-base">
-                            <Text className="font-bold">ESTADO: </Text>Ceará
-                        </Text>
-                        <Text className="text-black text-base">
-                            <Text className="font-bold">CIDADE: </Text>Fortaleza
-                        </Text>
-                        <Text className="text-black text-base">
-                            <Text className="font-bold">TELEFONE: </Text>(88) 9 9999-9999
-                        </Text>
-                    </View>
+                            <View className="space-y-3">
+                                <Text className="text-black text-base">
+                                    <Text className="font-bold">EMAIL: </Text>{user?.email}
+                                </Text>
+                                <Text className="text-black text-base">
+                                    <Text className="font-bold">CPF: </Text>{user?.cpf}
+                                </Text>
+                                <Text className="text-black text-base">
+                                    <Text className="font-bold">ESTADO: </Text>{user?.state}
+                                </Text>
+                                <Text className="text-black text-base">
+                                    <Text className="font-bold">CIDADE: </Text>{user?.city}
+                                </Text>
+                                <Text className="text-black text-base">
+                                    <Text className="font-bold">TELEFONE: </Text>{user?.phone}
+                                </Text>
+                            </View>
+                        </>
+                    )}
                 </View>
 
                 {/* Action Buttons */}

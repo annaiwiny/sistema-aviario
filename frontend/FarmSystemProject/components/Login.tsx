@@ -40,16 +40,32 @@ const Login = () => {
                 await AsyncStorage.setItem('userToken', data.token);
                 await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
-                // Verificar se já existe configuração inicial (Ex: Nome do Aviário)
-                const aviaryName = await AsyncStorage.getItem('aviaryName');
-                const nextRoute = aviaryName ? '/dashboard' : '/welcome';
+                // Verificar se o usuário já possui granja cadastrada
+                let nextRoute = '/welcome';
+                try {
+                    const farmResponse = await fetch(`${API_URL}/api/Farm/me`, {
+                        headers: {
+                            'Authorization': `Bearer ${data.token}`
+                        }
+                    });
+
+                    if (farmResponse.ok) {
+                        const farmData = await farmResponse.json();
+                        await AsyncStorage.setItem('aviaryName', farmData.name);
+                        nextRoute = '/dashboard';
+                    } else {
+                        // Se der 404 ou outro erro, assume que não tem granja => Welcome
+                        await AsyncStorage.removeItem('aviaryName');
+                    }
+                } catch (e) {
+                    console.log('Erro ao verificar granja:', e);
+                }
 
                 // Redirecionar
                 if (Platform.OS === 'web') {
-                    // Pequeno delay para garantir que o estado de loading não quebre o DOM na transição
-                    setTimeout(() => router.replace(nextRoute), 100);
+                    setTimeout(() => router.replace(nextRoute as any), 100);
                 } else {
-                    router.replace(nextRoute);
+                    router.replace(nextRoute as any);
                 }
             } else {
                 const errorMessage = data.message || 'E-mail ou senha inválidos.';
