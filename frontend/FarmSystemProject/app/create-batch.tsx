@@ -47,8 +47,8 @@ export default function CreateBatch() {
         setLineages(updated);
     };
 
-    const handleRegister = async () => {
-        // Validação simples
+const handleRegister = async () => {
+        // 1. Validação básica
         if (!accommodationDate) {
             Alert.alert('Erro', 'Informe a data de alojamento.');
             return;
@@ -65,23 +65,28 @@ export default function CreateBatch() {
 
         try {
             const token = await AsyncStorage.getItem('userToken');
-            const aviaryName = await AsyncStorage.getItem('aviaryName');
-
+            
+            // O nome do aviário não é usado no cadastro do lote, removi para limpar.
+            
             if (!token) {
                 Alert.alert('Erro', 'Usuário não autenticado.');
                 router.replace('/');
                 return;
             }
 
-            // Converter data DD/MM/AAAA para ISO
+            // 2. Converter Data (DD/MM/AAAA -> ISO)
             const dateParts = accommodationDate.split('/');
+            // Cria data UTC para evitar problemas de fuso horário (-3h)
+            // Formato final: YYYY-MM-DDT00:00:00Z
             const dateISO = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T00:00:00Z`;
 
+            // 3. Montar Payload (CORRIGIDO)
             const payload = {
                 accommodationDate: dateISO,
-                items: lineages.map(l => ({
+                // MUDANÇA: Nome da propriedade agora é "lineages"
+                lineages: lineages.map(l => ({
                     race: l.raceName,
-                    quantity: parseInt(l.quantity)
+                    quantity: parseInt(l.quantity, 10) // Garante que seja número inteiro
                 }))
             };
 
@@ -108,7 +113,6 @@ export default function CreateBatch() {
             setIsLoading(false);
         }
     };
-
     const handleSuccessClose = () => {
         setShowSuccess(false);
         router.back();
@@ -208,7 +212,11 @@ export default function CreateBatch() {
 
             </ScrollView>
 
-            <SuccessModal visible={showSuccess} onClose={handleSuccessClose} />
+            <SuccessModal 
+                visible={showSuccess} 
+                onClose={handleSuccessClose} 
+                message="LOTE CADASTRADO COM SUCESSO"
+            />
         </SafeAreaView>
     );
 }

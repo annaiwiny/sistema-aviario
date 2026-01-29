@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -8,16 +8,14 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@/constants/Api';
 
+// Tipagem simplificada baseada no retorno de /api/Farm/me
 interface Lot {
     id: number;
     accommodationDate: string;
-    raceName: string;
-    raceQuantity: number;
-    farmId: number;
 }
 
 export default function DashboardScreen() {
-    const [aviaryName, setAviaryName] = useState('Aviário Caipira');
+    const [aviaryName, setAviaryName] = useState('Carregando...');
     const [modalVisible, setModalVisible] = useState(false);
 
     const [lots, setLots] = useState<Lot[]>([]);
@@ -25,6 +23,7 @@ export default function DashboardScreen() {
 
     const router = useRouter();
 
+    // Notificações estáticas (Frontend Mock)
     const notifications = [
         { id: 1, title: 'Alta Taxa de Mortalidade', time: '14:24', desc: 'Lote 01 ultrapassou 99%', icon: 'alert', type: 'alert' },
         { id: 2, title: 'Início de Postura', time: '14:24', desc: 'Lote 01 deu inicio a postura de ovos', icon: 'chicken', type: 'info' },
@@ -32,47 +31,59 @@ export default function DashboardScreen() {
 
     useFocusEffect(
         React.useCallback(() => {
-            const loadData = async () => {
+            const loadDashboardData = async () => {
                 try {
                     setLoading(true);
-                    // 1. Carregar nome do aviário
-                    const name = await AsyncStorage.getItem('aviaryName');
-                    if (name) setAviaryName(name);
-
-                    // 2. Carregar lotes da API
                     const token = await AsyncStorage.getItem('userToken');
-                    if (token) {
-                        const response = await fetch(`${API_URL}/api/Lot`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
+                    
+                    if (!token) {
+                        router.replace('/'); // Chuta pro login se não tiver token
+                        return;
+                    }
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            setLots(data);
-                        } else {
-                            console.log('Erro ao buscar lotes:', response.status);
+                    // CHAMADA ÚNICA E PODEROSA: Pega Granja + Lotes
+                    const response = await fetch(`${API_URL}/api/Farm/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // 1. Atualiza Nome da Granja
+                        setAviaryName(data.name);
+                        
+                        // 2. Salva ID para uso futuro (garantia)
+                        await AsyncStorage.setItem('farmId', data.id.toString());
+
+                        // 3. Processa os Lotes
+                        if (data.lots && Array.isArray(data.lots)) {
+                            // Ordena por ID para ficar Lote 1, Lote 2 na ordem
+                            const sortedLots = data.lots.sort((a: Lot, b: Lot) => a.id - b.id);
+                            setLots(sortedLots);
                         }
+                    } else {
+                        console.log('Erro ao buscar dados da granja:', response.status);
+                        // Se der 401, token expirou
+                        if (response.status === 401) router.replace('/');
                     }
                 } catch (error) {
-                    console.error('Erro ao carregar dashboard', error);
+                    console.error('Erro de conexão:', error);
+                    Alert.alert('Erro', 'Falha ao conectar com o servidor.');
                 } finally {
                     setLoading(false);
                 }
             };
-            loadData();
+
+            loadDashboardData();
         }, [])
     );
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'alert':
-                return <Ionicons name="alert-circle-outline" size={32} color="black" />;
-            case 'info':
-                return <MaterialCommunityIcons name="bird" size={32} color="black" />;
-            case 'production':
-                return <MaterialCommunityIcons name="basket" size={32} color="black" />;
-            default:
-                return <Ionicons name="notifications-outline" size={32} color="black" />;
+            case 'alert': return <Ionicons name="alert-circle-outline" size={32} color="black" />;
+            case 'info': return <MaterialCommunityIcons name="bird" size={32} color="black" />;
+            case 'production': return <MaterialCommunityIcons name="basket" size={32} color="black" />;
+            default: return <Ionicons name="notifications-outline" size={32} color="black" />;
         }
     };
 
@@ -114,20 +125,14 @@ export default function DashboardScreen() {
                             lots.map((lot) => (
                                 <TouchableOpacity
                                     key={lot.id}
-                                    className="bg-purple-500 rounded-xl p-6 mb-4 shadow-lg shadow-purple-200 h-32 justify-between"
+                                    className="bg-purple-500 rounded-xl p-6 mb-4 shadow-lg shadow-purple-200 h-24 justify-center items-center"
                                     activeOpacity={0.8}
+                                    // Rota dinâmica para os detalhes
                                     onPress={() => router.push(`/lot-details/${lot.id}`)}
                                 >
-                                    <View className="flex-row justify-center items-center">
-                                        <Text className="text-white text-xl font-bold tracking-widest uppercase p-5">
-                                            LOTE {String(lot.id).padStart(2, '0')}
-                                        </Text>
-                                    </View>
-
-                                    <View>
-                                        <Text className="text-white font-semibold text-lg">{lot.raceName}</Text>
-                                        
-                                    </View>
+                                    <Text className="text-white text-2xl font-bold tracking-widest uppercase">
+                                        LOTE {String(lot.id).padStart(2, '0')}
+                                    </Text>
                                 </TouchableOpacity>
                             ))
                         )
@@ -146,7 +151,7 @@ export default function DashboardScreen() {
                 </View>
             </View>
 
-            {/* Notifications Modal */}
+            {/* Notifications Modal (Mantive igual pois é visual) */}
             <Modal
                 animationType="fade"
                 transparent={true}

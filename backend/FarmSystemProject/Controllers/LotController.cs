@@ -43,6 +43,14 @@ public class LotController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("{id}/dashboard")]
+    public async Task<ActionResult<LotDashboardResponse>> GetDashboardSummary(int id)
+    {
+        var userId = GetUserIdFromToken();
+        var summary = await _lotService.GetDashboardSummary(id, userId);
+        return Ok(summary);
+    }
+
     private int GetUserIdFromToken()
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

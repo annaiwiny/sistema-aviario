@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
+import SuccessModal from '@/components/SuccessModal'; // Importando o Modal
 
 export default function WelcomeScreen() {
     const [aviaryName, setAviaryName] = useState('');
     const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleRegister = async () => {
         if (!aviaryName.trim()) {
@@ -27,6 +29,7 @@ export default function WelcomeScreen() {
                 return;
             }
 
+            // POST para criar a granja
             const response = await fetch(`${API_URL}/api/Farm`, {
                 method: 'POST',
                 headers: {
@@ -38,8 +41,15 @@ export default function WelcomeScreen() {
 
             if (response.ok) {
                 const data = await response.json();
-                await AsyncStorage.setItem('aviaryName', aviaryName);
-                router.replace('/dashboard');
+                
+                // AJUSTE DE LÓGICA:
+                // Salvamos APENAS o ID. O nome a Dashboard busca sozinha.
+                if (data.id) {
+                    await AsyncStorage.setItem('farmId', data.id.toString());
+                }
+                
+                // Sucesso: Mostra o modal
+                setShowSuccessModal(true);
             } else {
                 const errorData = await response.json();
                 Alert.alert('Erro', errorData.title || 'Falha ao criar aviário.');
@@ -51,6 +61,12 @@ export default function WelcomeScreen() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Ao fechar o modal, vamos para o Dashboard
+    const handleSuccessClose = () => {
+        setShowSuccessModal(false);
+        router.replace('/dashboard');
     };
 
     return (
@@ -95,18 +111,29 @@ export default function WelcomeScreen() {
                 </View>
 
                 {/* Button Section */}
-
                 <View className="w-full items-center mt-10 mb-8">
                     <TouchableOpacity
                         className="bg-purple-500 w-full py-4 rounded-full items-center shadow-lg shadow-purple-200"
                         onPress={handleRegister}
+                        disabled={isLoading}
                     >
-                        <Text className="text-white text-lg font-bold">Cadastrar</Text>
+                        {isLoading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className="text-white text-lg font-bold">Cadastrar</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
 
-
             </ScrollView>
+
+            {/* Modal de Sucesso */}
+            <SuccessModal 
+                visible={showSuccessModal} 
+                onClose={handleSuccessClose}
+                title="SUCESSO!"
+                message="AVIÁRIO CADASTRADO COM SUCESSO"
+            />
         </SafeAreaView>
     );
 }

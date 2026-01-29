@@ -1,7 +1,12 @@
 {
   "dependencies": {
+    "expo": "^54.0.32",
     "react-native-reanimated": "^4.2.1",
     "react-native-svg": "^15.15.1",
     "react-native-svg-transformer": "^1.5.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
   }
 }

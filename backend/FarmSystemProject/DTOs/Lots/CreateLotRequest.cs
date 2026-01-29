@@ -7,6 +7,7 @@ public class CreateLotRequest
     [Required(ErrorMessage = "A data de alojamento é obrigatória.")]
     public DateTime AccommodationDate { get; set; }
 
-    [Required(ErrorMessage = "É necessário informar pelo menos uma linhagem.")]
+    [Required(ErrorMessage = "A lista não pode ser nula.")]
+    [MinLength(1, ErrorMessage = "É necessário informar pelo menos uma linhagem.")]
     public List<CreateLineageRequest> Lineages { get; set; } = [];
 }

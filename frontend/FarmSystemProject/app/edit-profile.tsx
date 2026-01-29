@@ -6,21 +6,25 @@ import Svg, { G, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
+// 1. IMPORTAR O MODAL
+import SuccessModal from '@/components/SuccessModal';
 
 export default function EditProfile() {
     const router = useRouter();
 
     // State for form fields
-
     const [email, setEmail] = useState('');
     const [cpf, setCpf] = useState('');
     const [state, setState] = useState('');
     const [city, setCity] = useState('');
     const [phone, setPhone] = useState('');
-    const [address, setAddress] = useState('');
-
+    
+    // Loading states
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // 2. ESTADO DO MODAL
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         loadUserData();
@@ -38,19 +42,15 @@ export default function EditProfile() {
 
                 if (response.ok) {
                     const data = await response.json();
-                    // Preencher campos com o que vier da API
-
                     setEmail(data.email || '');
                     setCpf(data.cpf || '');
                     setState(data.state || '');
                     setCity(data.city || '');
                     setPhone(data.phone || '');
-                    setAddress(data.address || '');
                 }
             }
         } catch (error) {
-            console.error('Erro ao carregar dados do usuário', error);
-            Alert.alert('Erro', 'Não foi possível carregar os dados.');
+            console.error('Erro ao carregar dados', error);
         } finally {
             setIsLoading(false);
         }
@@ -66,15 +66,7 @@ export default function EditProfile() {
                 return;
             }
 
-            const payload = {
-
-                email,
-                cpf,
-                state,
-                city,
-                address,
-                phone
-            };
+            const payload = { email, cpf, state, city, phone };
 
             const response = await fetch(`${API_URL}/api/User/me`, {
                 method: 'PUT',
@@ -86,20 +78,26 @@ export default function EditProfile() {
             });
 
             if (response.ok) {
-                Alert.alert('Sucesso', 'Perfil atualizado com sucesso!', [
-                    { text: 'OK', onPress: () => router.back() }
-                ]);
+                // 3. MOSTRAR MODAL EM VEZ DE ALERT
+                setShowSuccessModal(true);
             } else {
                 const errorData = await response.json();
-                Alert.alert('Erro', errorData.title || 'Falha ao atualizar perfil.');
+                const msg = errorData.message || errorData.title || 'Falha ao atualizar perfil.';
+                Alert.alert('Erro', msg);
             }
 
         } catch (error) {
-            console.error('Erro ao salvar perfil', error);
+            console.error('Erro ao salvar', error);
             Alert.alert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsSaving(false);
         }
+    };
+
+    // 4. FUNÇÃO PARA FECHAR E VOLTAR
+    const handleSuccessClose = () => {
+        setShowSuccessModal(false);
+        router.back(); // Volta para o Perfil
     };
 
     return (
@@ -137,8 +135,6 @@ export default function EditProfile() {
                         <ActivityIndicator size="large" color="#8B5CF6" className="mt-10" />
                     ) : (
                         <View className="space-y-4 gap-3">
-
-
                             <View>
                                 <Text className="text-black font-bold text-base mb-1 ml-1">Email</Text>
                                 <TextInput
@@ -206,6 +202,14 @@ export default function EditProfile() {
 
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {/* 5. COMPONENTE MODAL */}
+            {/* No final do return do EditProfile */}
+            <SuccessModal 
+                visible={showSuccessModal} 
+                onClose={handleSuccessClose} 
+                message="CADASTRO ATUALIZADO COM SUCESSO" // <--- Personalizado!
+            />
         </SafeAreaView>
     );
 }

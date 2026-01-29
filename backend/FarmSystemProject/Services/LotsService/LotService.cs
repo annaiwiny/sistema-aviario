@@ -138,4 +138,52 @@ public class LotService : ILotService
             }).ToList()
         };
     }
+
+    public async Task<LotDashboardResponse> GetDashboardSummary(int lotId, int ownerId)
+    {
+        var lot = await _context.Lots
+            .AsNoTracking()
+            .Include(l => l.Lineages)
+            .FirstOrDefaultAsync(l => l.Id == lotId && l.Farm.OwnerId == ownerId);
+
+        if (lot == null) 
+            throw new NotFoundException("Lote não encontrado.");
+
+        var today = DateTime.Today;
+        // Quantidade inicial de galinhas
+        var initialStock = lot.Lineages.Sum(x => x.Quantity);
+
+        // Mortes anteriores a data de hoje
+        var previousLosses = await _context.Mortalities
+            .Where(m => m.LotId == lotId && m.DateDeath.Date < today) 
+            .SumAsync(m => m.DeathQuantity + m.CutQuantity);
+
+        // Quantidade de galinhas vivas hoje
+        var birdsStartOfDay = initialStock - previousLosses;
+
+        // Ovos coletados hoje
+        var eggsToday = await _context.EggProductions
+            .Where(e => e.LotId == lotId && e.ProductionDate.Date == today)
+            .SumAsync(e => e.Quantity);
+
+        var notLaying = birdsStartOfDay - eggsToday;
+        // Evita valores negativos que quebrariam o frontend ao retornar.
+        if (notLaying < 0) 
+            notLaying = 0;
+        
+        decimal percentage = 0;
+        if (birdsStartOfDay > 0)
+        {
+            percentage = ((decimal)eggsToday / birdsStartOfDay) * 100;
+        }
+
+        return new LotDashboardResponse
+        {
+            LotId = lot.Id,
+            CurrentAlive = birdsStartOfDay,    
+            EggsCollectedToday = eggsToday,    
+            HensNotLayingToday = notLaying,    
+            LayingPercentage = Math.Round(percentage, 2)
+        };
+    }
 }

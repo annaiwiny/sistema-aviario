@@ -5,9 +5,19 @@ import { Ionicons } from '@expo/vector-icons';
 interface SuccessModalProps {
     visible: boolean;
     onClose: () => void;
+    // Adicionamos estas duas props opcionais
+    title?: string;
+    message?: string;
+    buttonText?: string;
 }
 
-export default function SuccessModal({ visible, onClose }: SuccessModalProps) {
+export default function SuccessModal({ 
+    visible, 
+    onClose, 
+    title = "SUCESSO!", // Valor padrão se não for informado
+    message = "OPERAÇÃO REALIZADA COM SUCESSO", // Valor padrão genérico
+    buttonText = "OK"
+}: SuccessModalProps) {
     return (
         <Modal
             animationType="fade"
@@ -22,14 +32,14 @@ export default function SuccessModal({ visible, onClose }: SuccessModalProps) {
                         <Ionicons name="checkmark" size={64} color="white" />
                     </View>
 
-                    {/* Title */}
-                    <Text className="text-3xl font-black text-black mb-3">
-                        SUCESSO!
+                    {/* Title (Agora dinâmico) */}
+                    <Text className="text-3xl font-black text-black mb-3 text-center">
+                        {title}
                     </Text>
 
-                    {/* Message */}
+                    {/* Message (Agora dinâmico) */}
                     <Text className="text-black text-center text-base font-normal mb-8 uppercase">
-                        CADASTRO REALIZADO COM SUCESSO
+                        {message}
                     </Text>
 
                     {/* Button */}
@@ -37,7 +47,7 @@ export default function SuccessModal({ visible, onClose }: SuccessModalProps) {
                         className="bg-[#8B5CF6] w-48 py-3 rounded-full items-center shadow-lg shadow-purple-200"
                         onPress={onClose}
                     >
-                        <Text className="text-white text-xl font-bold">OK</Text>
+                        <Text className="text-white text-xl font-bold">{buttonText}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

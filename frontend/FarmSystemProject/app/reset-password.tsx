@@ -1,48 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router'; // Importar Stack
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
 
-export default function ForgotPassword() {
+export default function ResetPassword() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
+    const { token } = useLocalSearchParams(); 
+
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-    const handleSendLink = async () => {
-        if (!email) {
-            Alert.alert('Erro', 'Por favor, informe um e-mail válido.');
+    useEffect(() => {
+        if (!token) {
+            Alert.alert('Atenção', 'Link de recuperação inválido ou expirado.');
+        }
+    }, [token]);
+
+    const handleResetPassword = async () => {
+        if (!token) {
+            Alert.alert('Erro', 'Token de recuperação não encontrado.');
+            return;
+        }
+        if (!newPassword || !confirmPassword) {
+            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            Alert.alert('Erro', 'As senhas não coincidem.');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            // CHAMADA REAL AO BACKEND
-            const response = await fetch(`${API_URL}/api/Auth/forgot-password`, {
+            const rawToken = token.toString();
+            const fixedToken = rawToken.replace(/ /g, '+'); 
+
+            const response = await fetch(`${API_URL}/api/Auth/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({
+                    token: fixedToken,
+                    newPassword: newPassword
+                }),
             });
 
             if (response.ok) {
-                // Sucesso: Mostra o Modal
                 setShowSuccessModal(true);
             } else {
-                // Erro: Tenta ler mensagem do backend ou usa genérica
                 const errorData = await response.json().catch(() => ({}));
-                const msg = errorData.message || 'Não foi possível enviar o link. Verifique o e-mail.';
+                const msg = errorData.message || 'Não foi possível redefinir a senha.';
                 Alert.alert('Erro', msg);
             }
 
         } catch (error) {
-            console.error('Erro ao recuperar senha', error);
+            console.error('Erro reset senha', error);
             Alert.alert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsLoading(false);
@@ -51,7 +71,7 @@ export default function ForgotPassword() {
 
     const handleSuccessClose = () => {
         setShowSuccessModal(false);
-        router.back(); // Volta para o Login
+        router.replace('/'); 
     };
 
     return (
@@ -60,11 +80,11 @@ export default function ForgotPassword() {
                 contentContainerStyle={{ flexGrow: 1, padding: 24 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header Navigation with Logo */}
-                <View className="flex-row items-center mb-6 relative mb-20">
+                {/* Header Navigation */}
+                <View className="flex-row items-center mb-6 relative mb-10">
                     <TouchableOpacity
                         className="flex-row items-center z-10"
-                        onPress={() => router.back()}
+                        onPress={() => router.replace('/')} // Força voltar para Login
                     >
                         <Ionicons name="chevron-back" size={24} color="#8B5CF6" />
                         <Text className="text-purple-500 font-bold text-lg ml-1">voltar</Text>
@@ -88,46 +108,60 @@ export default function ForgotPassword() {
                 <View className="h-0.5 bg-purple-300 w-full mb-4 shadow-sm" />
 
                 {/* Description */}
-                <Text className="text-gray-500 text-base mb-10 leading-6">
-                    Informe um e-mail cadastrado e enviaremos um link para recuperação de sua senha.
+                <Text className="text-gray-500 text-base mb-8 leading-6">
+                    Defina sua nova senha e confirme-a!
                 </Text>
 
-                {/* Email Input */}
-                <View className="mb-10">
-                    <Text className="text-black font-bold mb-2 ml-1 text-base">
-                        E-mail
-                    </Text>
-                    <TextInput
-                        className="bg-gray-200 rounded-xl p-4 text-base text-gray-800 shadow-sm"
-                        placeholder="seu@email.com"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
+                <View className="space-y-6 mb-10">
+                    {/* Nova Senha */}
+                    <View>
+                        <Text className="text-black font-bold mb-2 ml-1 text-base">
+                            Nova senha:
+                        </Text>
+                        <TextInput
+                            className="bg-gray-200 rounded-xl p-4 text-base text-gray-800 shadow-sm"
+                            placeholder=""
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                            secureTextEntry
+                        />
+                    </View>
+
+                    {/* Confirmar Senha */}
+                    <View>
+                        <Text className="text-black font-bold mb-2 ml-1 text-base">
+                            Confirme a nova senha:
+                        </Text>
+                        <TextInput
+                            className="bg-gray-200 rounded-xl p-4 text-base text-gray-800 shadow-sm"
+                            placeholder=""
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry
+                        />
+                    </View>
                 </View>
 
                 {/* Submit Button */}
                 <TouchableOpacity
                     className="bg-purple-500 py-4 rounded-xl items-center shadow-md shadow-purple-200"
-                    onPress={handleSendLink}
+                    onPress={handleResetPassword}
                     disabled={isLoading}
                 >
                     {isLoading ? (
                         <ActivityIndicator color="white" />
                     ) : (
-                        <Text className="text-white text-lg font-bold">Enviar link de recuperação</Text>
+                        <Text className="text-white text-lg font-bold">Redefinir Senha</Text>
                     )}
                 </TouchableOpacity>
 
             </ScrollView>
 
-            {/* Modal de Sucesso Personalizado */}
             <SuccessModal 
                 visible={showSuccessModal} 
                 onClose={handleSuccessClose}
-                title="VERIFIQUE SEU E-MAIL"
-                message="Link de recuperação enviado com sucesso!"
+                title="SENHA ALTERADA!"
+                message="Sua senha foi redefinida com sucesso. Faça login novamente."
             />
         </SafeAreaView>
     );

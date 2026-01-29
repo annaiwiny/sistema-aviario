@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { G, Path, Ellipse } from 'react-native-svg';
+import Svg, { G, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,45 +18,60 @@ interface UserData {
 
 export default function Profile() {
     const router = useRouter();
-    const [aviaryName, setAviaryName] = useState('Aviário');
+    const [aviaryName, setAviaryName] = useState('Carregando...'); // Feedback visual melhor
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
 
     const handleLogout = async () => {
-        await AsyncStorage.removeItem('userToken');
-        await AsyncStorage.removeItem('userData');
-        router.replace('/');
+        try {
+            await AsyncStorage.clear(); // Limpa tudo (Token, IDs, Nomes)
+            router.replace('/');
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     useFocusEffect(
         React.useCallback(() => {
-            const loadData = async () => {
+            const loadProfileData = async () => {
                 try {
                     setLoading(true);
-
-                    // 1. Aviary Name
-                    const name = await AsyncStorage.getItem('aviaryName');
-                    if (name) setAviaryName(name);
-
-                    // 2. User Data
                     const token = await AsyncStorage.getItem('userToken');
-                    if (token) {
-                        const response = await fetch(`${API_URL}/api/User/me`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            setUser(data);
-                        }
+                    if (!token) {
+                        router.replace('/');
+                        return;
                     }
+
+                    // 1. BUSCAR DADOS DO USUÁRIO (Fresquinho da API)
+                    const userResponse = await fetch(`${API_URL}/api/User/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        setUser(userData);
+                    }
+
+                    // 2. BUSCAR DADOS DA GRANJA (Para pegar o Nome correto)
+                    const farmResponse = await fetch(`${API_URL}/api/Farm/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (farmResponse.ok) {
+                        const farmData = await farmResponse.json();
+                        setAviaryName(farmData.name); // Aqui atualiza o nome "AVIÁRIO CAIPIRA"
+                    }
+
                 } catch (error) {
                     console.error('Erro ao carregar perfil', error);
+                    Alert.alert('Erro', 'Não foi possível carregar os dados.');
                 } finally {
                     setLoading(false);
                 }
             };
-            loadData();
+
+            loadProfileData();
         }, [])
     );
 
@@ -89,10 +104,13 @@ export default function Profile() {
                 {/* Info Card */}
                 <View className="bg-green-100 border-2 border-purple-400 rounded-2xl p-6 mb-10 shadow-sm">
                     {loading ? (
-                        <ActivityIndicator color="#8B5CF6" />
+                        <ActivityIndicator color="#8B5CF6" size="large" />
                     ) : (
                         <>
-                            <Text className="text-black text-xl font-medium text-center mb-6 uppercase">{aviaryName}</Text>
+                            {/* Nome do Aviário Dinâmico */}
+                            <Text className="text-black text-xl font-medium text-center mb-6 uppercase">
+                                {aviaryName}
+                            </Text>
 
                             <View className="space-y-3">
                                 <Text className="text-black text-base">

@@ -13,7 +13,7 @@ const Login = () => {
 
     const router = useRouter();
 
-    const handleLogin = async () => {
+const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
             return;
@@ -22,26 +22,25 @@ const Login = () => {
         setIsLoading(true);
 
         try {
+            // 1. LOGIN
             const response = await fetch(`${API_URL}/api/Auth/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    password
-                }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                // Salvar token e dados do usuário
+                // Salva Token e User
                 await AsyncStorage.setItem('userToken', data.token);
-                await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+                if (data.user) {
+                    await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+                }
 
-                // Verificar se o usuário já possui granja cadastrada
-                let nextRoute = '/welcome';
+                // 2. VERIFICA SE TEM GRANJA
+                let nextRoute = '/welcome'; // Padrão: vai para cadastro se não achar
+
                 try {
                     const farmResponse = await fetch(`${API_URL}/api/Farm/me`, {
                         headers: {
@@ -51,22 +50,27 @@ const Login = () => {
 
                     if (farmResponse.ok) {
                         const farmData = await farmResponse.json();
-                        await AsyncStorage.setItem('aviaryName', farmData.name);
-                        nextRoute = '/dashboard';
+                        
+                        // SUCESSO: Tem granja!
+                        // Salvamos APENAS o ID. O resto (Nome, Lotes) a Home busca.
+                        await AsyncStorage.setItem('farmId', farmData.id.toString());
+                        
+                        nextRoute = '/dashboard'; // (ou '/home', depende de como está sua rota)
                     } else {
-                        // Se der 404 ou outro erro, assume que não tem granja => Welcome
-                        await AsyncStorage.removeItem('aviaryName');
+                        // 404 ou erro: Não tem granja, limpa ID antigo se houver
+                        await AsyncStorage.removeItem('farmId');
                     }
                 } catch (e) {
                     console.log('Erro ao verificar granja:', e);
                 }
 
-                // Redirecionar
+                // 3. REDIRECIONA
                 if (Platform.OS === 'web') {
                     setTimeout(() => router.replace(nextRoute as any), 100);
                 } else {
                     router.replace(nextRoute as any);
                 }
+
             } else {
                 const errorMessage = data.message || 'E-mail ou senha inválidos.';
                 Alert.alert('Erro', errorMessage);

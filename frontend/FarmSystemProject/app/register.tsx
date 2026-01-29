@@ -10,8 +10,7 @@ import SuccessModal from '@/components/SuccessModal';
 export default function Register() {
     const router = useRouter();
 
-    // Form states
-
+    // Form states (Removidos birthDate e address)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,13 +18,12 @@ export default function Register() {
     const [state, setState] = useState('');
     const [city, setCity] = useState('');
     const [phone, setPhone] = useState('');
-    const [birthDate, setBirthDate] = useState('2000-01-01'); // Valor padrão para evitar erro, ideal seria um DatePicker
-    const [address, setAddress] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleRegister = async () => {
+        // Validação ajustada (sem address)
         if (!email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
             return;
@@ -44,16 +42,14 @@ export default function Register() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                // Body ajustado estritamente para o que o backend pede
                 body: JSON.stringify({
-
                     email,
                     password,
                     cpf,
                     state,
                     city,
-                    phone,
-                    birthDate: new Date(birthDate).toISOString(),
-                    address: address || 'Endereço não informado'
+                    phone
                 }),
             });
 
@@ -77,7 +73,7 @@ export default function Register() {
 
     const handleSuccessClose = () => {
         setShowSuccessModal(false);
-        router.replace('/(tabs)');
+        router.replace('/');
     };
 
     return (
@@ -111,8 +107,6 @@ export default function Register() {
 
                 {/* Form Fields */}
                 <View className="w-full space-y-4">
-
-
 
                     {/* Email */}
                     <View className="mb-4">
@@ -199,19 +193,6 @@ export default function Register() {
                         />
                     </View>
 
-                    {/* Endereço */}
-                    <View className="mb-4">
-                        <Text className="text-black font-semibold mb-2 ml-1 text-base">
-                            Endereço
-                        </Text>
-                        <TextInput
-                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
-                            placeholder="Logradouro, número..."
-                            value={address}
-                            onChangeText={setAddress}
-                        />
-                    </View>
-
                     {/* Telefone */}
                     <View className="mb-8">
                         <Text className="text-black font-semibold mb-2 ml-1 text-base">
@@ -249,7 +230,12 @@ export default function Register() {
 
             </ScrollView>
 
-            <SuccessModal visible={showSuccessModal} onClose={handleSuccessClose} />
+            {/* No final do return do Register */}
+            <SuccessModal 
+                visible={showSuccessModal} 
+                onClose={handleSuccessClose} 
+                message="CADASTRO REALIZADO COM SUCESSO" // <--- Personalizado!
+            />
         </SafeAreaView>
     );
 }
