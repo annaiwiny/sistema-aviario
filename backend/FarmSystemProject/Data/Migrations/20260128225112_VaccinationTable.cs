@@ -5,30 +5,30 @@
 namespace FarmSystemProject.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddFarmTable : Migration
+    public partial class VaccinationTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "Farms",
+                name: "VaccineType",
+                table: "Vaccinations",
                 type: "nvarchar(255)",
                 maxLength: 255,
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(50)",
-                oldMaxLength: 50);
+                oldType: "nvarchar(100)",
+                oldMaxLength: 100);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "Farms",
-                type: "nvarchar(50)",
-                maxLength: 50,
+                name: "VaccineType",
+                table: "Vaccinations",
+                type: "nvarchar(100)",
+                maxLength: 100,
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(255)",

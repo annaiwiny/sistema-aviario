@@ -1,6 +1,6 @@
 using FarmSystemProject.Data;
 using FarmSystemProject.Interfaces;
-using FarmSystemProject.Interfaces.IFarm;
+using FarmSystemProject.Interfaces.ILots;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
 using FarmSystemProject.Middlewares;
@@ -8,6 +8,7 @@ using FarmSystemProject.Services;
 using FarmSystemProject.Services.FarmService;
 using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.Interfaces.IFarm;
+using FarmSystemProject.Services.LotsService;
 using FarmSystemProject.Services.ProductiveMonitoringService;
 using FarmSystemProject.Services.ReportService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,6 +16,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
 using System.Text;
+using FarmSystemProject.Interfaces.IReportService;
+using FarmSystemProject.Services.HealthMonitoringService;
+using FarmSystemProject.Interfaces.IReportInterface;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -74,13 +78,13 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddScoped<IEggService, EggService>();
+builder.Services.AddScoped<IEggProductionService, EggProductionService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();
 builder.Services.AddScoped<IVaccinationService, VaccinationService>();
 builder.Services.AddScoped<ILotService, LotService>();
 builder.Services.AddScoped<IVaccinationReportService, VaccinationReportService>();
 builder.Services.AddScoped<IMortalityReportService, MortalityReportService>();
-builder.Services.AddScoped<IEggReportService, EggReportService>();
+builder.Services.AddScoped<IEggProductionReportService, EggProductionReportService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

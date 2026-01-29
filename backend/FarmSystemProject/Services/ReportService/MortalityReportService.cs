@@ -1,7 +1,7 @@
 ﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
 
 namespace FarmSystemProject.Services.ReportService;
@@ -15,9 +15,9 @@ public class MortalityReportService : IMortalityReportService
         _mortalityService = mortalityService;
     }
 
-    public async Task<byte[]> GenerateMortalityListReport()
+    public async Task<byte[]> GenerateMortalityListReport(int lotId, int ownerId)
     {
-        var mortality = await _mortalityService.GetAll();
+        var mortalities = await _mortalityService.GetAllByLotId(lotId, ownerId);
 
         var document = Document.Create(container =>
         {
@@ -29,7 +29,7 @@ public class MortalityReportService : IMortalityReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório de Mortalidade")
+                    row.RelativeItem().Text("Relatório Geral de Mortalidade")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -40,32 +40,29 @@ public class MortalityReportService : IMortalityReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(50);
-                        columns.ConstantColumn(50);
+                        columns.ConstantColumn(40);
+                        columns.ConstantColumn(85);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
-                        columns.RelativeColumn();
-                        columns.ConstantColumn(50);
+                        columns.RelativeColumn(2);
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade da Morte").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade de corte").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Mortes").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Cortes").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Motivo").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
                     });
 
-                    foreach (var mortality in mortality)
+                    foreach (var mortality in mortalities)
                     {
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Id.ToString());
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DateDeath.ToString("dd/MM/yyyy"));
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DeathQuantity.ToString());
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.CutQuantity.ToString());
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Reason);
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.LotId.ToString());
                     }
                 });
 
@@ -79,9 +76,10 @@ public class MortalityReportService : IMortalityReportService
 
         return document.GeneratePdf();
     }
-    public async Task<byte[]> GenerateMortalityDateReport(DateTime dateDeath)
+    public async Task<byte[]> GenerateMortalityDateReport(int lotId, int ownerId, DateTime dateDeath)
     {
-        var mortality = await _mortalityService.GetByDate(dateDeath);
+        var allMortalities = await _mortalityService.GetAllByLotId(lotId, ownerId);
+        var dailyMortalities = allMortalities.Where(m => m.DateDeath.Date == dateDeath.Date).ToList();
 
         var document = Document.Create(container =>
         {
@@ -93,8 +91,8 @@ public class MortalityReportService : IMortalityReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório de Mortalidade")
-                        .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
+                    row.RelativeItem().Text($"Relatório de Mortalidade - {dateDeath:dd/MM/yyyy}")
+                        .FontSize(18).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
                         .FontSize(10).Italic();
@@ -104,47 +102,46 @@ public class MortalityReportService : IMortalityReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(50);
-                        columns.ConstantColumn(50);
+                        columns.ConstantColumn(40);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
-                        columns.RelativeColumn();
-                        columns.ConstantColumn(50);
+                        columns.RelativeColumn(3);
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade da Morte").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade de corte").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Mortes").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Cortes").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Motivo").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
                     });
 
-                    foreach (var mortality in mortality)
+                    foreach (var item in dailyMortalities)
                     {
-                        if (mortality.DateDeath.Date == dateDeath)
-                        {
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Id.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DateDeath.ToString("dd/MM/yyyy"));
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.DeathQuantity.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.CutQuantity.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.Reason);
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(mortality.LotId.ToString());
-                        }
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Id.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.DeathQuantity.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.CutQuantity.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Reason);
                     }
                 });
 
-                page.Footer().AlignCenter().Text(x =>
+                page.Footer().Row(row =>
                 {
-                    x.Span("Página ");
-                    x.CurrentPageNumber();
+                    row.RelativeItem().Text(x =>
+                    {
+                        x.Span($"Total Mortes: {dailyMortalities.Sum(d => d.DeathQuantity)} | ");
+                        x.Span($"Total Cortes: {dailyMortalities.Sum(d => d.CutQuantity)}");
+                    });
+
+                    row.RelativeItem().AlignRight().Text(x =>
+                    {
+                        x.Span("Página ");
+                        x.CurrentPageNumber();
+                    });
                 });
             });
         });
 
         return document.GeneratePdf();
     }
-
 }

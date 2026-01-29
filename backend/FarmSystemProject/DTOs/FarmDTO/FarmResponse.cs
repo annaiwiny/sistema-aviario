@@ -1,4 +1,4 @@
-﻿using FarmSystemProject.Models.Farm;
+﻿using FarmSystemProject.DTOs.Lots;
 
 namespace FarmSystemProject.DTOs.FarmDTO;
 

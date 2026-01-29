@@ -1,69 +1,75 @@
 ﻿using FarmSystemProject.DTOs.HealthMonitoringDTO;
-using FarmSystemProject.Interfaces;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Interfaces.IReportService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FarmSystemProject.Controllers;
+
+[Authorize]
+[Route("api/lots/{lotId}/vaccinations")]
 [ApiController]
-[Route("api/[Controller]")]
 public class VaccinationController : ControllerBase
 {
-    private readonly IVaccinationService _vaccinationService;
-    private readonly IVaccinationReportService _vaccinationReportService;
+    private readonly IVaccinationService _service;
+    private readonly IVaccinationReportService _reportService;
 
-    public VaccinationController(
-        IVaccinationService vaccinationService,
-        IVaccinationReportService vaccinationReportService
-    )
+    public VaccinationController(IVaccinationService service, IVaccinationReportService reportService)
     {
-        _vaccinationService = vaccinationService;
-        _vaccinationReportService = vaccinationReportService;
+        _service = service;
+        _reportService = reportService;
     }
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<VaccinationDTO>>> GetAll()
-    {
-        var vaccination = await _vaccinationService.GetAll();
-        return Ok(vaccination);
-    }
-    [HttpGet("{applicationDate}")]
-    public async Task<ActionResult<VaccinationDTO>> GetByDate(DateTime applicationDate)
-    {
-        var results = await _vaccinationService.GetByDate(applicationDate);
-        if (results == null || !results.Any())
-        {
-            return NotFound("Nenhum registro encontrado para essa data.");
-        }
 
-        var totalApplication = results.Sum(v => v.ApplicationQuantity);
-        var totalValue = results.Sum(v => v.ApplicationValue);
-
-        return Ok(new
-        {
-            Data = applicationDate.ToShortDateString(),
-            QuantidadeAplicacoes = totalApplication,
-            ValorTotal = totalValue
-        });
-    }
     [HttpPost]
-    public async Task<ActionResult<VaccinationDTO>> Create(VaccinationDTO vaccinationDto)
+    public async Task<ActionResult<VaccinationResponse>> Create(int lotId, [FromBody] CreateVaccinationRequest request)
     {
-        var result = await _vaccinationService.Create(vaccinationDto);
-        return CreatedAtAction(
-            nameof(GetByDate),
-            new { applicationDate = result.ApplicationDate.ToString("yyyy-MM-dd") },
-            result
-        );
+        var userId = GetUserIdFromToken();
+        var response = await _service.Create(lotId, userId, request);
+        return CreatedAtAction(nameof(GetAll), new { lotId }, response);
     }
-    [HttpGet("report")]
-    public async Task<IActionResult> DownloadReport()
+
+    // Como usar: /api/lots/1/vaccinations/summary?date=2026-05-20
+    [HttpGet("summary")]
+    public async Task<ActionResult<VaccinationDateSummary>> GetSummary(int lotId, [FromQuery] DateTime date)
     {
-        var pdf = await _vaccinationReportService.GenerateVaccinationListReport();
-        return File(pdf, "application/pdf", "Relatorio_Vacinação.pdf");
+        var userId = GetUserIdFromToken();
+        var summary = await _service.GetSummaryByDate(lotId, userId, date);
+        return Ok(summary);
     }
-    [HttpGet("report/{applicationDate}")]
-    public async Task<IActionResult> DownloadReportDate(DateTime applicationDate)
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<VaccinationResponse>>> GetAll(int lotId)
     {
-        var pdf = await _vaccinationReportService.GenerateVaccinationDateReport(applicationDate);
-        return File(pdf, "application/pdf", "Relatorio_Vacinação.pdf");
+        var userId = GetUserIdFromToken();
+        var response = await _service.GetAllByLotId(lotId, userId);
+        return Ok(response);
+    }
+
+    [HttpGet("pdf")]
+    public async Task<IActionResult> DownloadReport(int lotId)
+    {
+        var userId = GetUserIdFromToken();
+        var fileBytes = await _reportService.GenerateVaccinationListReport(lotId, userId);
+        return File(fileBytes, "application/pdf", $"Vacinacao_Lote_{lotId}.pdf");
+    }
+
+    // Como usar: /api/lots/1/vaccinations/pdf/daily?date=2026-05-20
+    [HttpGet("pdf/daily")]
+    public async Task<IActionResult> DownloadDailyReport(int lotId, [FromQuery] DateTime date)
+    {
+        var userId = GetUserIdFromToken();
+        var fileBytes = await _reportService.GenerateVaccinationDateReport(lotId, userId, date);
+        return File(fileBytes, "application/pdf", $"Vacinacao_{date:yyyyMMdd}.pdf");
+    }
+
+    private int GetUserIdFromToken()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+            throw new UnauthorizedAccessException("Token inválido");
+
+        return int.Parse(userId);
     }
 }

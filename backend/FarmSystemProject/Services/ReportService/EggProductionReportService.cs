@@ -1,23 +1,23 @@
 ﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using FarmSystemProject.Interfaces;
+using FarmSystemProject.Interfaces.IReportInterface;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
 
 namespace FarmSystemProject.Services.ReportService;
 
-public class EggReportService : IEggReportService
+public class EggProductionReportService : IEggProductionReportService
 {
-    private readonly IEggService _eggService;
+    private readonly IEggProductionService _eggService;
 
-    public EggReportService(IEggService eggService)
+    public EggProductionReportService(IEggProductionService eggService)
     {
         _eggService = eggService;
     }
 
-    public async Task<byte[]> GenerateEggListReport()
+    public async Task<byte[]> GenerateEggListReport(int lotId, int ownerId)
     {
-        var egg = await _eggService.GetAll();
+        var productions = await _eggService.GetAllByLotId(lotId, ownerId);
 
         var document = Document.Create(container =>
         {
@@ -41,8 +41,7 @@ public class EggReportService : IEggReportService
                     table.ColumnsDefinition(columns =>
                     {
                         columns.ConstantColumn(50);
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
+                        columns.ConstantColumn(85);
                         columns.RelativeColumn();
                     });
 
@@ -51,15 +50,13 @@ public class EggReportService : IEggReportService
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
                     });
 
-                    foreach (var collectegg in egg)
+                    foreach (var item in productions)
                     {
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.Id.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectDate.ToString("dd/MM/yyyy"));
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectQuantity.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.LotId.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Id.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.ProductionDate.ToString("dd/MM/yyyy"));
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Quantity.ToString());
                     }
                 });
 
@@ -73,9 +70,11 @@ public class EggReportService : IEggReportService
 
         return document.GeneratePdf();
     }
-    public async Task<byte[]> GenerateEggDateReport(DateTime collectDate)
+
+    public async Task<byte[]> GenerateEggDateReport(int lotId, int ownerId, DateTime date)
     {
-        var egg = await _eggService.GetByDate(collectDate);
+        var allData = await _eggService.GetAllByLotId(lotId, ownerId);
+        var dailyData = allData.Where(p => p.ProductionDate.Date == date.Date).ToList();
 
         var document = Document.Create(container =>
         {
@@ -87,7 +86,7 @@ public class EggReportService : IEggReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório de Mortalidade")
+                    row.RelativeItem().Text("Relatório de Produção de Ovos")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -99,8 +98,7 @@ public class EggReportService : IEggReportService
                     table.ColumnsDefinition(columns =>
                     {
                         columns.ConstantColumn(50);
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
+                        columns.ConstantColumn(85);
                         columns.RelativeColumn();
                     });
 
@@ -109,18 +107,13 @@ public class EggReportService : IEggReportService
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
                     });
 
-                    foreach (var collectegg in egg)
+                    foreach (var item in dailyData)
                     {
-                        if (collectegg.CollectDate.Date == collectDate.Date)
-                        {
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.Id.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectDate.ToString("dd/MM/yyyy"));
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.CollectQuantity.ToString());
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(collectegg.LotId.ToString());
-                        }
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Id.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.ProductionDate.ToString("dd/MM/yyyy"));
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Quantity.ToString());
                     }
                 });
 
@@ -134,5 +127,4 @@ public class EggReportService : IEggReportService
 
         return document.GeneratePdf();
     }
-
 }

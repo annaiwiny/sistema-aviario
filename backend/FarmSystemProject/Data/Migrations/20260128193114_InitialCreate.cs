@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FarmSystemProject.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDatabase : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,36 +28,23 @@ namespace FarmSystemProject.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Races",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Races", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    BirthDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Password = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     Cpf = table.Column<string>(type: "nvarchar(14)", maxLength: 14, nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
-                    State = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    City = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
+                    State = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    City = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FailedLoginAttempts = table.Column<int>(type: "int", nullable: false),
-                    LockoutEnd = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    LockoutEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PasswordResetToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PasswordResetTokenExpiration = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PasswordResetTokenUsed = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -70,7 +57,7 @@ namespace FarmSystemProject.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     OwnerId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -91,8 +78,6 @@ namespace FarmSystemProject.Data.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AccommodationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RaceQuantity = table.Column<int>(type: "int", nullable: false),
-                    RaceId = table.Column<int>(type: "int", nullable: false),
                     FarmId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -102,12 +87,6 @@ namespace FarmSystemProject.Data.Migrations
                         name: "FK_Lots_Farms_FarmId",
                         column: x => x.FarmId,
                         principalTable: "Farms",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Lots_Races_RaceId",
-                        column: x => x.RaceId,
-                        principalTable: "Races",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -155,6 +134,27 @@ namespace FarmSystemProject.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Lineages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Race = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    LotId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Lineages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Lineages_Lots_LotId",
+                        column: x => x.LotId,
+                        principalTable: "Lots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Mortalities",
                 columns: table => new
                 {
@@ -171,6 +171,29 @@ namespace FarmSystemProject.Data.Migrations
                     table.PrimaryKey("PK_Mortalities", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Mortalities_Lots_LotId",
+                        column: x => x.LotId,
+                        principalTable: "Lots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Sales",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UnitValue = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    EggQuantity = table.Column<int>(type: "int", nullable: false),
+                    TotalValue = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    SaleDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LotId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sales", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Sales_Lots_LotId",
                         column: x => x.LotId,
                         principalTable: "Lots",
                         principalColumn: "Id",
@@ -217,19 +240,36 @@ namespace FarmSystemProject.Data.Migrations
                 column: "LotId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Lineages_LotId",
+                table: "Lineages",
+                column: "LotId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Lots_FarmId",
                 table: "Lots",
                 column: "FarmId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Lots_RaceId",
-                table: "Lots",
-                column: "RaceId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Mortalities_LotId",
                 table: "Mortalities",
                 column: "LotId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sales_LotId",
+                table: "Sales",
+                column: "LotId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Cpf",
+                table: "Users",
+                column: "Cpf",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Vaccinations_LotId",
@@ -250,7 +290,13 @@ namespace FarmSystemProject.Data.Migrations
                 name: "Feeds");
 
             migrationBuilder.DropTable(
+                name: "Lineages");
+
+            migrationBuilder.DropTable(
                 name: "Mortalities");
+
+            migrationBuilder.DropTable(
+                name: "Sales");
 
             migrationBuilder.DropTable(
                 name: "Vaccinations");
@@ -260,9 +306,6 @@ namespace FarmSystemProject.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Farms");
-
-            migrationBuilder.DropTable(
-                name: "Races");
 
             migrationBuilder.DropTable(
                 name: "Users");

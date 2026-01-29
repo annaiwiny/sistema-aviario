@@ -1,8 +1,10 @@
 ﻿using FarmSystemProject.Models.Users;
+using FarmSystemProject.Models.Lots;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-namespace FarmSystemProject.Models.Farm;
+
+namespace FarmSystemProject.Models.Farms;
 
 [Index(nameof(OwnerId), IsUnique = true)]
 public class Farm

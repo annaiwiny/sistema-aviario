@@ -1,4 +1,4 @@
-﻿namespace FarmSystemProject.DTOs.FarmDTO;
+﻿namespace FarmSystemProject.DTOs.Lots;
 
 public class LotSummaryResponse
 {

@@ -1,6 +1,5 @@
-﻿using FarmSystemProject.Interfaces;
-using FarmSystemProject.Interfaces.IHealthMonitoring;
-using Microsoft.Identity.Client;
+﻿using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Interfaces.IReportService;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -15,9 +14,10 @@ public class VaccinationReportService : IVaccinationReportService
     {
         _vaccinationService = vaccinationService;
     }
-    public async Task<byte[]> GenerateVaccinationListReport()
+
+    public async Task<byte[]> GenerateVaccinationListReport(int lotId, int ownerId)
     {
-        var vaccination = await _vaccinationService.GetAll();
+        var vaccinations = await _vaccinationService.GetAllByLotId(lotId, ownerId);
 
         var document = Document.Create(container =>
         {
@@ -29,7 +29,7 @@ public class VaccinationReportService : IVaccinationReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório de Vacinação")
+                    row.RelativeItem().Text("Relatório Geral de Vacinação")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -40,9 +40,9 @@ public class VaccinationReportService : IVaccinationReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(50);
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
+                        columns.ConstantColumn(40);
+                        columns.ConstantColumn(85);
+                        columns.RelativeColumn(2);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn();
@@ -52,24 +52,29 @@ public class VaccinationReportService : IVaccinationReportService
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Tipo da vacina").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Valor unitário").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Vacina").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
                     });
 
-                    foreach (var vaccination in vaccination)
+                    foreach (var item in vaccinations)
                     {
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.Id.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.ApplicationDate.ToString("dd/MM/yyyy"));
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.VaccineType);
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.ApplicationValue.ToString("F2"));
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.ApplicationQuantity.ToString());
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.LotId.ToString());
-
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Id.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.ApplicationDate.ToString("dd/MM/yyyy"));
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.VaccineType);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text($"R$ {item.ApplicationValue:F2}");
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.ApplicationQuantity.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text($"R$ {item.TotalCost:F2}");
                     }
+                });
 
-                    page.Footer().AlignCenter().Text(x =>
+                page.Footer().Row(row =>
+                {
+                    row.RelativeItem().Text($"Custo Total do Lote: R$ {vaccinations.Sum(v => v.TotalCost):F2}")
+                       .SemiBold().FontSize(14);
+
+                    row.RelativeItem().AlignRight().Text(x =>
                     {
                         x.Span("Página ");
                         x.CurrentPageNumber();
@@ -77,12 +82,14 @@ public class VaccinationReportService : IVaccinationReportService
                 });
             });
         });
+
         return document.GeneratePdf();
     }
 
-    public async Task<byte[]> GenerateVaccinationDateReport(DateTime applicationDate)
+    public async Task<byte[]> GenerateVaccinationDateReport(int lotId, int ownerId, DateTime date)
     {
-        var vaccination = await _vaccinationService.GetByDate(applicationDate);
+        var allVaccinations = await _vaccinationService.GetAllByLotId(lotId, ownerId);
+        var dailyVaccinations = allVaccinations.Where(v => v.ApplicationDate.Date == date.Date).ToList();
 
         var document = Document.Create(container =>
         {
@@ -94,7 +101,7 @@ public class VaccinationReportService : IVaccinationReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório de Vacinação")
+                    row.RelativeItem().Text($"Vacinação - {date:dd/MM/yyyy}")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -105,9 +112,8 @@ public class VaccinationReportService : IVaccinationReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(50);
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
+                        columns.ConstantColumn(40);
+                        columns.RelativeColumn(2);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn();
@@ -116,27 +122,30 @@ public class VaccinationReportService : IVaccinationReportService
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("ID").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Tipo da vacina").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Valor unitário").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Lote").SemiBold();
-
-                        foreach (var vaccination in vaccination)
-                        {
-                            if (vaccination.ApplicationDate.Date == applicationDate.Date)
-                            {
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.Id.ToString());
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.ApplicationDate.ToString("dd/MM/yyyy"));
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.VaccineType);
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.ApplicationValue.ToString("F2"));
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.ApplicationQuantity.ToString());
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(vaccination.LotId.ToString());
-                            }
-                        }
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Vacina").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
                     });
 
-                    page.Footer().AlignCenter().Text(x =>
+                    foreach (var item in dailyVaccinations)
+                    {
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.Id.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.VaccineType);
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text($"R$ {item.ApplicationValue:F2}");
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text(item.ApplicationQuantity.ToString());
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5).Text($"R$ {item.TotalCost:F2}");
+                    }
+                });
+
+                page.Footer().Row(row =>
+                {
+                    row.RelativeItem().Text(x =>
+                    {
+                        x.Span($"Total Gasto no Dia: R$ {dailyVaccinations.Sum(v => v.TotalCost):F2}");
+                    });
+
+                    row.RelativeItem().AlignRight().Text(x =>
                     {
                         x.Span("Página ");
                         x.CurrentPageNumber();
@@ -144,6 +153,7 @@ public class VaccinationReportService : IVaccinationReportService
                 });
             });
         });
+
         return document.GeneratePdf();
     }
 }

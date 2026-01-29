@@ -1,9 +1,10 @@
 ﻿using FarmSystemProject.DTOs.HealthMonitoringDTO;
 
 namespace FarmSystemProject.Interfaces.IHealthMonitoring;
+
 public interface IMortalityService
 {
-    Task<IEnumerable<MortalityDTO>> GetAll();
-    Task<IEnumerable<MortalityDTO>> GetByDate(DateTime dateDeath);
-    Task<MortalityDTO> Create(MortalityDTO mortalityDto);
+    Task<MortalityResponse> Create(int lotId, int ownerId, CreateMortalityRequest request);
+    Task<MortalityDateSummary> GetSummaryByDate(int lotId, int ownerId, DateTime date);
+    Task<IEnumerable<MortalityResponse>> GetAllByLotId(int lotId, int ownerId);
 }

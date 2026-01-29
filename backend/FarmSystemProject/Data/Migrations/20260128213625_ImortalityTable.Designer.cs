@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FarmSystemProject.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260127231754_AddFarmTable")]
-    partial class AddFarmTable
+    [Migration("20260128213625_ImortalityTable")]
+    partial class ImortalityTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace FarmSystemProject.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("FarmSystemProject.Models.Farm.Farm", b =>
+            modelBuilder.Entity("FarmSystemProject.Models.Farms.Farm", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -47,53 +47,6 @@ namespace FarmSystemProject.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Farms");
-                });
-
-            modelBuilder.Entity("FarmSystemProject.Models.Farm.Lot", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AccommodationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("FarmId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RaceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RaceQuantity")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FarmId");
-
-                    b.HasIndex("RaceId");
-
-                    b.ToTable("Lots");
-                });
-
-            modelBuilder.Entity("FarmSystemProject.Models.Farm.Race", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Races");
                 });
 
             modelBuilder.Entity("FarmSystemProject.Models.HealthMonitoring.Mortality", b =>
@@ -158,6 +111,53 @@ namespace FarmSystemProject.Data.Migrations
                     b.HasIndex("LotId");
 
                     b.ToTable("Vaccinations");
+                });
+
+            modelBuilder.Entity("FarmSystemProject.Models.Lots.Lineage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LotId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Race")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LotId");
+
+                    b.ToTable("Lineages");
+                });
+
+            modelBuilder.Entity("FarmSystemProject.Models.Lots.Lot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AccommodationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmId");
+
+                    b.ToTable("Lots");
                 });
 
             modelBuilder.Entity("FarmSystemProject.Models.NutritionalControl.Feed", b =>
@@ -234,6 +234,38 @@ namespace FarmSystemProject.Data.Migrations
                     b.ToTable("CollectEggs");
                 });
 
+            modelBuilder.Entity("FarmSystemProject.Models.SalesRecord.Sale", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EggQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LotId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SaleDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("TotalValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LotId");
+
+                    b.ToTable("Sales");
+                });
+
             modelBuilder.Entity("FarmSystemProject.Models.Users.User", b =>
                 {
                     b.Property<int>("Id")
@@ -301,7 +333,7 @@ namespace FarmSystemProject.Data.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("FarmSystemProject.Models.Farm.Farm", b =>
+            modelBuilder.Entity("FarmSystemProject.Models.Farms.Farm", b =>
                 {
                     b.HasOne("FarmSystemProject.Models.Users.User", "Owner")
                         .WithMany()
@@ -312,28 +344,9 @@ namespace FarmSystemProject.Data.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("FarmSystemProject.Models.Farm.Lot", b =>
-                {
-                    b.HasOne("FarmSystemProject.Models.Farm.Farm", "Farm")
-                        .WithMany("Lots")
-                        .HasForeignKey("FarmId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FarmSystemProject.Models.Farm.Race", "Race")
-                        .WithMany()
-                        .HasForeignKey("RaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Farm");
-
-                    b.Navigation("Race");
-                });
-
             modelBuilder.Entity("FarmSystemProject.Models.HealthMonitoring.Mortality", b =>
                 {
-                    b.HasOne("FarmSystemProject.Models.Farm.Lot", "Lot")
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -344,7 +357,7 @@ namespace FarmSystemProject.Data.Migrations
 
             modelBuilder.Entity("FarmSystemProject.Models.HealthMonitoring.Vaccination", b =>
                 {
-                    b.HasOne("FarmSystemProject.Models.Farm.Lot", "Lot")
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -353,9 +366,31 @@ namespace FarmSystemProject.Data.Migrations
                     b.Navigation("Lot");
                 });
 
+            modelBuilder.Entity("FarmSystemProject.Models.Lots.Lineage", b =>
+                {
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
+                        .WithMany("Lineages")
+                        .HasForeignKey("LotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lot");
+                });
+
+            modelBuilder.Entity("FarmSystemProject.Models.Lots.Lot", b =>
+                {
+                    b.HasOne("FarmSystemProject.Models.Farms.Farm", "Farm")
+                        .WithMany("Lots")
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Farm");
+                });
+
             modelBuilder.Entity("FarmSystemProject.Models.NutritionalControl.Feeding", b =>
                 {
-                    b.HasOne("FarmSystemProject.Models.Farm.Lot", "Lot")
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -366,7 +401,7 @@ namespace FarmSystemProject.Data.Migrations
 
             modelBuilder.Entity("FarmSystemProject.Models.ProductiveMonitoring.CollectEgg", b =>
                 {
-                    b.HasOne("FarmSystemProject.Models.Farm.Lot", "Lot")
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
                         .WithMany()
                         .HasForeignKey("LotId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -375,9 +410,25 @@ namespace FarmSystemProject.Data.Migrations
                     b.Navigation("Lot");
                 });
 
-            modelBuilder.Entity("FarmSystemProject.Models.Farm.Farm", b =>
+            modelBuilder.Entity("FarmSystemProject.Models.SalesRecord.Sale", b =>
+                {
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
+                        .WithMany()
+                        .HasForeignKey("LotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lot");
+                });
+
+            modelBuilder.Entity("FarmSystemProject.Models.Farms.Farm", b =>
                 {
                     b.Navigation("Lots");
+                });
+
+            modelBuilder.Entity("FarmSystemProject.Models.Lots.Lot", b =>
+                {
+                    b.Navigation("Lineages");
                 });
 #pragma warning restore 612, 618
         }
