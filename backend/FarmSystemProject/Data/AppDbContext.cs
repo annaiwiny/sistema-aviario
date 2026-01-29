@@ -23,28 +23,24 @@ public class AppDbContext : DbContext
     public DbSet<Vaccination> Vaccinations { get; set; }
     public DbSet<Feed> Feeds { get; set; }
     public DbSet<Feeding> Feedings { get; set; }
-    public DbSet<CollectEgg> CollectEggs { get; set; }
+    public DbSet<EggProduction> EggProductions { get; set; }
     public DbSet<Sale> Sales { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // --- Configuração de Usuário ---
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<User>().HasIndex(u => u.Cpf).IsUnique();
 
-        // --- Configuração de Granja ---
         modelBuilder.Entity<Farm>().HasIndex(f => f.OwnerId).IsUnique();
 
-        // --- Configuração de Lote e Itens (O que faltava) ---
         modelBuilder.Entity<Lot>()
-            .HasMany(l => l.Lineages)        // Lote tem muitos Itens
-            .WithOne(i => i.Lot)          // Item tem um Lote
-            .HasForeignKey(i => i.LotId)  // Chave estrangeira
-            .OnDelete(DeleteBehavior.Cascade); // Deletar Lote -> Deleta Itens
+            .HasMany(l => l.Lineages)
+            .WithOne(i => i.Lot)
+            .HasForeignKey(i => i.LotId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        // --- Configurações Financeiras (Precisão) ---
         modelBuilder.Entity<Feed>().Property(f => f.BagValue).HasPrecision(18, 2);
         modelBuilder.Entity<Sale>().Property(s => s.UnitValue).HasPrecision(18, 2);
         modelBuilder.Entity<Sale>().Property(s => s.TotalValue).HasPrecision(18, 2);

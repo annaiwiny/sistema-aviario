@@ -3,16 +3,20 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FarmSystemProject.Models.ProductiveMonitoring;
-public class CollectEgg
+public class EggProduction
 {
     [Key]
     public int Id { get; set; }
+
     [Required]
-    public DateTime CollectDate { get; set; }
+    public DateTime ProductionDate { get; set; }
+
     [Required]
-    public int CollectQuantity { get; set; }
+    public int Quantity { get; set; }
+
     [Required]
     public int LotId { get; set; }
+
     [ForeignKey("LotId")]
-    public Lot Lot { get; set; }
+    public Lot Lot { get; set; } = null!;
 }
