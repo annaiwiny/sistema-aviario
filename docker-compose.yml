@@ -30,6 +30,18 @@ services:
       - ConnectionStrings__DefaultConnection=Server=database;Database=FarmSystemDb;User Id=sa;Password=Password123!;TrustServerCertificate=True;
     networks:
       - farmsystem-network
+    
+  frontend:
+    build:
+      context: ./frontend/FarmSystemProject
+      dockerfile: Dockerfile
+    container_name: farmsystem-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - farmsystem-network
 
 volumes:
   sqlvolume:
