@@ -6,6 +6,7 @@ using FarmSystemProject.Models.ProductiveMonitoring;
 using FarmSystemProject.Models.SalesRecord;
 using FarmSystemProject.Models.Users;
 using Microsoft.EntityFrameworkCore;
+using FarmSystemProject.Models.Sensors;
 
 namespace FarmSystemProject.Data;
 
@@ -25,6 +26,8 @@ public class AppDbContext : DbContext
     public DbSet<Feeding> Feedings { get; set; }
     public DbSet<EggProduction> EggProductions { get; set; }
     public DbSet<Sale> Sales { get; set; }
+    public DbSet<Sensor> Sensors { get; set; }
+    public DbSet<SensorReading> SensorReadings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

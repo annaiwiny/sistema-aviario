@@ -19,6 +19,8 @@ using System.Text;
 using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Services.HealthMonitoringService;
 using FarmSystemProject.Interfaces.IReportInterface;
+using FarmSystemProject.Interfaces.ISensors;
+using FarmSystemProject.Services.Sensors;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,8 +30,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddControllers();
-
-
 
 builder.Services.AddCors(options =>
 {
@@ -77,6 +77,8 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+builder.Services.AddScoped<ISensorService, SensorService>();
 
 builder.Services.AddScoped<IEggProductionService, EggProductionService>();
 builder.Services.AddScoped<IMortalityService, MortalityService>();

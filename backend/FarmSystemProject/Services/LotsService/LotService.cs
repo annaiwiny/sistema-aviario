@@ -17,17 +17,17 @@ public class LotService : ILotService
 
     public async Task<LotResponse> Create(int ownerId, CreateLotRequest request)
     {
-        var farm = await _context.Farms
+        var farmId = await _context.Farms
             .Where(f => f.OwnerId == ownerId)
-            .Select(f => new { f.Id })
+            .Select(f => f.Id)
             .FirstOrDefaultAsync();
 
-        if (farm == null)
+        if (farmId == 0)
             throw new NotFoundException("Você não possui nenhum aviário cadastrado");
 
         var lot = new Lot
         {
-            FarmId = farm.Id,
+            FarmId = farmId,
             AccommodationDate = request.AccommodationDate,
             Lineages = request.Lineages.Select(l => new Lineage
             {
