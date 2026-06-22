@@ -19,9 +19,6 @@ public class Sensor
     public string MacAddress { get; set; } = string.Empty;
 
     [Required]
-    public string LocalId { get; set; } = string.Empty;
-
-    [Required]
     public int LotId { get; set; }
 
     [ForeignKey("LotId")]

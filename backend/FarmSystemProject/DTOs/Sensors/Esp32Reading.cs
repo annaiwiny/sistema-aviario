@@ -1,7 +1,9 @@
-﻿namespace FarmSystemProject.DTOs.Sensors;
+﻿using FarmSystemProject.Models.Sensors;
+
+namespace FarmSystemProject.DTOs.Sensors;
 
 public class Esp32Reading
 {
-    public string LocalId { get; set; } = string.Empty;
+    public SensorType Type { get; set; }
     public float Value { get; set; }
 }

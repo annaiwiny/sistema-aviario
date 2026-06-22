@@ -98,7 +98,7 @@ public class SensorService : ISensorService
 
         foreach (var reading in payload.Readings)
         {
-            var sensor = Esp32Sensors.FirstOrDefault(s => s.LocalId == reading.LocalId);
+            var sensor = Esp32Sensors.FirstOrDefault(s => s.Type == reading.Type);
 
             if (sensor == null)
                 continue;
