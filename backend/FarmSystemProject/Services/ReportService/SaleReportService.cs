@@ -100,23 +100,19 @@ public class SaleReportService : ISaleReportService
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(12));
 
-                page.Header().Column(column =>
+                page.Header().Row(row =>
                 {
-                    column.Item().Row(row =>
-                    {
-                        row.RelativeItem().Text("Relatório Geral de Vendas")
-                            .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
+                    row.RelativeItem().Text($"Vendas - {date:dd/MM/yyyy}")
+                        .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
-                        row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
-                            .FontSize(10).Italic();
-                    });
+                    row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
+                        .FontSize(10).Italic();
                 });
 
                 page.Content().PaddingVertical(10).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(85);
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn();
@@ -124,7 +120,6 @@ public class SaleReportService : ISaleReportService
 
                     table.Header(header =>
                     {
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
@@ -132,9 +127,6 @@ public class SaleReportService : ISaleReportService
 
                     foreach (var item in dailySales)
                     {
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text(item.SaleDate.ToString("dd/MM/yyyy"));
-
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
                             .Text($"R$ {item.UnitValue:F2}");
 
@@ -148,8 +140,10 @@ public class SaleReportService : ISaleReportService
 
                 page.Footer().Row(row =>
                 {
-                    row.RelativeItem().Text($"Valor Total no Dia: R$ {dailySales.Sum(s => s.TotalValue):F2}")
-                        .SemiBold().FontSize(14);
+                    row.RelativeItem().Text(x =>
+                    {
+                        x.Span($"Valor Total no Dia: R$ {dailySales.Sum(s => s.TotalValue):F2}");
+                    });
 
                     row.RelativeItem().AlignRight().Text(x =>
                     {

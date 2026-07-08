@@ -51,7 +51,7 @@ public class SaleController : ControllerBase
     {
         var userId = GetUserIdFromToken();
         var fileBytes = await _reportService.GenerateSalesListReport(lotId, userId);
-        return File(fileBytes, "application/pdf", $"Vacinacao_Lote_{lotId}.pdf");
+        return File(fileBytes, "application/pdf", $"Vendas_Lote_{lotId}.pdf");
     }
 
     // Como usar: /api/lots/1/sales/pdf/daily?date=2026-05-20
@@ -60,7 +60,7 @@ public class SaleController : ControllerBase
     {
         var userId = GetUserIdFromToken();
         var fileBytes = await _reportService.GenerateSalesDateReport(lotId, userId, date);
-        return File(fileBytes, "application/pdf", $"Vacinacao_{date:yyyyMMdd}.pdf");
+        return File(fileBytes, "application/pdf", $"Vendas_{date:yyyyMMdd}.pdf");
     }
 
     private int GetUserIdFromToken()
