@@ -1,26 +1,28 @@
 using FarmSystemProject.Data;
 using FarmSystemProject.Interfaces;
-using FarmSystemProject.Interfaces.ILots;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Interfaces.ILots;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
+using FarmSystemProject.Interfaces.IReportInterface;
+using FarmSystemProject.Interfaces.IReportService;
+using FarmSystemProject.Interfaces.ISales;
+using FarmSystemProject.Interfaces.ISensors;
 using FarmSystemProject.Middlewares;
 using FarmSystemProject.Services;
 using FarmSystemProject.Services.FarmService;
+using FarmSystemProject.Services.HealthMonitoringService;
 using FarmSystemProject.Services.HelthMonitoringService;
 using FarmSystemProject.Services.Interfaces.IFarm;
 using FarmSystemProject.Services.LotsService;
 using FarmSystemProject.Services.ProductiveMonitoringService;
 using FarmSystemProject.Services.ReportService;
+using FarmSystemProject.Services.Sales;
+using FarmSystemProject.Services.Sensors;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using QuestPDF.Infrastructure;
 using System.Text;
-using FarmSystemProject.Interfaces.IReportService;
-using FarmSystemProject.Services.HealthMonitoringService;
-using FarmSystemProject.Interfaces.IReportInterface;
-using FarmSystemProject.Interfaces.ISensors;
-using FarmSystemProject.Services.Sensors;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -87,6 +89,8 @@ builder.Services.AddScoped<ILotService, LotService>();
 builder.Services.AddScoped<IVaccinationReportService, VaccinationReportService>();
 builder.Services.AddScoped<IMortalityReportService, MortalityReportService>();
 builder.Services.AddScoped<IEggProductionReportService, EggProductionReportService>();
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<ISaleReportService, SaleReportService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

@@ -110,10 +110,6 @@ public class SaleReportService : ISaleReportService
                         row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
                             .FontSize(10).Italic();
                     });
-
-                    column.Item().PaddingTop(5)
-                        .Text($"Data: {date:dd/MM/yyyy}")
-                        .SemiBold();
                 });
 
                 page.Content().PaddingVertical(10).Table(table =>
