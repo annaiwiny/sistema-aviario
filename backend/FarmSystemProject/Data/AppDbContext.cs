@@ -3,10 +3,10 @@ using FarmSystemProject.Models.Lots;
 using FarmSystemProject.Models.HealthMonitoring;
 using FarmSystemProject.Models.NutritionalControl;
 using FarmSystemProject.Models.ProductiveMonitoring;
-using FarmSystemProject.Models.SalesRecord;
 using FarmSystemProject.Models.Users;
 using Microsoft.EntityFrameworkCore;
 using FarmSystemProject.Models.Sensors;
+using FarmSystemProject.Models.Sales;
 
 namespace FarmSystemProject.Data;
 
@@ -45,7 +45,5 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Feed>().Property(f => f.BagValue).HasPrecision(18, 2);
-        modelBuilder.Entity<Sale>().Property(s => s.UnitValue).HasPrecision(18, 2);
-        modelBuilder.Entity<Sale>().Property(s => s.TotalValue).HasPrecision(18, 2);
     }
 }
