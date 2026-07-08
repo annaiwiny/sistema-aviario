@@ -1,4 +1,5 @@
 ﻿using FarmSystemProject.DTOs.Sales;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.ISales;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace FarmSystemProject.Controllers;
 public class SaleController : ControllerBase
 {
     private readonly ISaleService _service;
+    private readonly ISaleReportService _reportService;
 
-    public SaleController(ISaleService service)
+    public SaleController(ISaleService service, ISaleReportService reportService)
     {
         _service = service;
+        _reportService = reportService;
     }
 
     [HttpPost]
@@ -41,6 +44,23 @@ public class SaleController : ControllerBase
         var userId = GetUserIdFromToken();
         var response = await _service.GetAllByLotId(lotId, userId);
         return Ok(response);
+    }
+
+    [HttpGet("pdf")]
+    public async Task<IActionResult> DownloadReport(int lotId)
+    {
+        var userId = GetUserIdFromToken();
+        var fileBytes = await _reportService.GenerateSalesListReport(lotId, userId);
+        return File(fileBytes, "application/pdf", $"Vacinacao_Lote_{lotId}.pdf");
+    }
+
+    // Como usar: /api/lots/1/sales/pdf/daily?date=2026-05-20
+    [HttpGet("pdf/daily")]
+    public async Task<IActionResult> DownloadDailyReport(int lotId, [FromQuery] DateTime date)
+    {
+        var userId = GetUserIdFromToken();
+        var fileBytes = await _reportService.GenerateSalesDateReport(lotId, userId, date);
+        return File(fileBytes, "application/pdf", $"Vacinacao_{date:yyyyMMdd}.pdf");
     }
 
     private int GetUserIdFromToken()
