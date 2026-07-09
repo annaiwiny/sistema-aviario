@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FarmSystemProject.Models.Lots;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FarmSystemProject.Models.NutritionalControl;
@@ -18,4 +19,14 @@ public class Feed
 
     [Required, Column(TypeName = "decimal(18,2)")]
     public decimal BagValue { get; set; }
+
+    // Atributo auxiliar (Não cria coluna no banco)
+    [NotMapped]
+    public decimal TotalCost => BagQuantity * BagValue;
+
+    [Required]
+    public int LotId { get; set; }
+
+    [ForeignKey("LotId")]
+    public Lot Lot { get; set; } = null!;
 }
