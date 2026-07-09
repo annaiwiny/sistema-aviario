@@ -47,7 +47,7 @@ public class FeedingReportService : IFeedingReportService
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade consumida (kg)").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd (kg)").SemiBold();
                     });
 
                     foreach (var item in feedings)
@@ -108,7 +108,7 @@ public class FeedingReportService : IFeedingReportService
 
                     table.Header(header =>
                     {
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Quantidade de ração consumida (kg)").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd (kg)").SemiBold();
                     });
 
                     foreach (var item in dailyFeedings)
