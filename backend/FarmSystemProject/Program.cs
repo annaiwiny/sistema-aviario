@@ -95,6 +95,8 @@ builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<ISaleReportService, SaleReportService>();
 builder.Services.AddScoped<IFeedingService, FeedingService>();
 builder.Services.AddScoped<IFeedingReportService, FeedingReportService>();
+builder.Services.AddScoped<IFeedService, FeedService>();
+builder.Services.AddScoped<IFeedReportService, FeedReportService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
