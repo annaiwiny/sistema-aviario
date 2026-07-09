@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace FarmSystemProject.DTOs.NutricionalControl.Feeding;
+namespace FarmSystemProject.DTOs.NutritionalControl.Feeding;
 
 public class CreateFeeding
 {
