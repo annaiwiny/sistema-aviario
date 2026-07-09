@@ -4,6 +4,7 @@ using FarmSystemProject.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FarmSystemProject.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709175201_AddFeed")]
+    partial class AddFeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -175,15 +178,10 @@ namespace FarmSystemProject.Data.Migrations
                     b.Property<decimal>("BagWeight")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("LotId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("PurchaseDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("LotId");
 
                     b.ToTable("Feeds");
                 });
@@ -435,17 +433,6 @@ namespace FarmSystemProject.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Farm");
-                });
-
-            modelBuilder.Entity("FarmSystemProject.Models.NutritionalControl.Feed", b =>
-                {
-                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
-                        .WithMany()
-                        .HasForeignKey("LotId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Lot");
                 });
 
             modelBuilder.Entity("FarmSystemProject.Models.NutritionalControl.Feeding", b =>

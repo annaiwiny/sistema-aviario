@@ -6,18 +6,18 @@ using QuestPDF.Infrastructure;
 
 namespace FarmSystemProject.Services.ReportService;
 
-public class FeedingReportService : IFeedingReportService
+public class FeedReportService : IFeedReportService
 {
-    private readonly IFeedingService _feedingService;
+    private readonly IFeedService _feedService;
 
-    public FeedingReportService(IFeedingService feedingService)
+    public FeedReportService(IFeedService feedService)
     {
-        _feedingService = feedingService;
+        _feedService = feedService;
     }
 
-    public async Task<byte[]> GenerateFeedingListReport(int lotId, int ownerId)
+    public async Task<byte[]> GenerateFeedListReport(int lotId, int ownerId)
     {
-        var feedings = await _feedingService.GetAllByLotId(lotId, ownerId);
+        var feeds = await _feedService.GetAllByLotId(lotId, ownerId);
 
         var document = Document.Create(container =>
         {
@@ -29,7 +29,7 @@ public class FeedingReportService : IFeedingReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório Geral de Controle de Alimentação")
+                    row.RelativeItem().Text("Relatório Geral de Gastos com Ração")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -42,28 +42,43 @@ public class FeedingReportService : IFeedingReportService
                     {
                         columns.ConstantColumn(85);
                         columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
                     });
 
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd (kg)").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Peso").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
                     });
 
-                    foreach (var item in feedings)
+                    foreach (var item in feeds)
                     {
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text(item.ConsumptionDate.ToString("dd/MM/yyyy"));
+                            .Text(item.PurchaseDate.ToString("dd/MM/yyyy"));
 
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text($"{item.ConsumptionQuantity:F2}");
+                            .Text($"{item.BagWeight:F2} kg");
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            .Text(item.BagQuantity.ToString());
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            .Text($"R$ {item.BagValue:F2}");
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            .Text($"R$ {item.TotalCost:F2}");
                     }
                 });
 
                 page.Footer().Row(row =>
                 {
-                    row.RelativeItem().Text($"Quantidade Total Consumida do Lote: {feedings.Sum(s => s.ConsumptionQuantity):F2} kg")
-                       .SemiBold().FontSize(14);
+                    row.RelativeItem().Text($"Custo Total do Lote: R$ {feeds.Sum(f => f.TotalCost):F2}")
+                        .SemiBold().FontSize(14);
 
                     row.RelativeItem().AlignRight().Text(x =>
                     {
@@ -77,10 +92,10 @@ public class FeedingReportService : IFeedingReportService
         return document.GeneratePdf();
     }
 
-    public async Task<byte[]> GenerateFeedingDateReport(int lotId, int ownerId, DateTime date)
+    public async Task<byte[]> GenerateFeedDateReport(int lotId, int ownerId, DateTime date)
     {
-        var feedings = await _feedingService.GetAllByLotId(lotId, ownerId);
-        var dailyFeedings = feedings.Where(f => f.ConsumptionDate.Date == date.Date).ToList();
+        var feeds = await _feedService.GetAllByLotId(lotId, ownerId);
+        var dailyFeeds = feeds.Where(f => f.PurchaseDate.Date == date.Date).ToList();
 
         var document = Document.Create(container =>
         {
@@ -92,7 +107,7 @@ public class FeedingReportService : IFeedingReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text($"Controle de Alimentação - {date:dd/MM/yyyy}")
+                    row.RelativeItem().Text($"Gastos com Ração - {date:dd/MM/yyyy}")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -104,17 +119,32 @@ public class FeedingReportService : IFeedingReportService
                     table.ColumnsDefinition(columns =>
                     {
                         columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
+                        columns.RelativeColumn();
                     });
 
                     table.Header(header =>
                     {
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd (kg)").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Peso").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
+                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
                     });
 
-                    foreach (var item in dailyFeedings)
+                    foreach (var item in dailyFeeds)
                     {
                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text($"{item.ConsumptionQuantity:F2}");
+                            .Text($"{item.BagWeight:F2} kg");
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            .Text(item.BagQuantity.ToString());
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            .Text($"R$ {item.BagValue:F2}");
+
+                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            .Text($"R$ {item.TotalCost:F2}");
                     }
                 });
 
@@ -122,7 +152,7 @@ public class FeedingReportService : IFeedingReportService
                 {
                     row.RelativeItem().Text(x =>
                     {
-                        x.Span($"Quantidade Total Consumida no Dia: {dailyFeedings.Sum(f => f.ConsumptionQuantity):F2} kg");
+                        x.Span($"Custo Total no Dia: R$ {dailyFeeds.Sum(f => f.TotalCost):F2}");
                     });
 
                     row.RelativeItem().AlignRight().Text(x =>
