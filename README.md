@@ -84,7 +84,7 @@ Com o código compilado e pronto podemos ligar o nosso ESP32 virtual:
 
 Preste atenção no terminal que se abrirá logo abaixo da simulação. O ESP32 vai imprimir o seu **Endereço MAC** (será algo parecido com: `24:0A:C4:00:01:10`). **Copie e guarde esse endereço**, nós vamos precisar dele no próximo passo.
 
-⚠️ Assim que ligar, é esperado que o ESP32 comece a tentar enviar dados e receba uma mensagem de erro: `Connection Refused`. Isso é apenas a segurança do nosso Backend fazendo o trabalho dela, pois nós ainda não apresentamos o seu sensor para o banco de dados.
+⚠️ Atenção ao Código HTTP 404 ou -1. Assim que ligar a simulação, é normal e esperado que o ESP32 tente enviar os dados e receba uma mensagem de erro no terminal como **`Código HTTP: 404`** (junto com a mensagem "Nenhum sensor encontrado..."). Isso é apenas a segurança e validação do nosso Backend. (O erro `Connection Refused (-1)` só acontecerá se o container do Backend estiver desligado).
 
 ---
 
