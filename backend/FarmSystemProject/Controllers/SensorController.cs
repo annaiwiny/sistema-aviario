@@ -31,12 +31,11 @@ public class SensorController : ControllerBase
 
     [HttpPost("/api/sensors/readings")]
     [AllowAnonymous]
-    public async Task<IActionResult> ReceiveReadings([FromBody] Esp32Payload payload)
+    public async Task<IActionResult> ReceiveReadings([FromBody] Esp32Payload payload, [FromHeader(Name = "X-Secret-Key")] string? secretKey)
     {
-        var extractedSecretKey = Request.Headers["X-Secret-Key"].ToString();
         var expectedSecretKey = _configuration["Esp32Config:SecretKey"];
 
-        if (string.IsNullOrEmpty(extractedSecretKey) || extractedSecretKey != expectedSecretKey)
+        if (string.IsNullOrEmpty(secretKey) || secretKey != expectedSecretKey)
         {
             throw new UnauthorizedException("Chave secreta inválida ou ausente.");
         }
@@ -47,12 +46,12 @@ public class SensorController : ControllerBase
 
     [HttpPost("/api/sensors")]
     [AllowAnonymous]
-    public async Task<ActionResult<Sensor>> Create([FromBody] CreateSensor request)
+    public async Task<ActionResult<Sensor>> Create([FromBody] CreateSensor request, [FromHeader(Name = "X-Secret-Key")] string? secretKey)
     {
         var extractedSecretKey = Request.Headers["X-Secret-Key"].ToString();
         var expectedSecretKey = _configuration["Esp32Config:SecretKey"];
 
-        if (string.IsNullOrEmpty(extractedSecretKey) || extractedSecretKey != expectedSecretKey)
+        if (string.IsNullOrEmpty(secretKey) || secretKey != expectedSecretKey)
         {
             throw new UnauthorizedException("Chave secreta inválida ou ausente.");
         }
