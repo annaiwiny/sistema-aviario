@@ -1,4 +1,5 @@
 ﻿using FarmSystemProject.DTOs.Sensors;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.ISensors;
 using FarmSystemProject.Models.Sensors;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +14,13 @@ namespace FarmSystemProject.Controllers;
 public class SensorController : ControllerBase
 {
     private readonly ISensorService _sensorService;
+    private readonly ISensorReportService _sensorReportService;
     private readonly IConfiguration _configuration;
 
-    public SensorController(ISensorService sensorService, IConfiguration configuration)
+    public SensorController(ISensorService sensorService, ISensorReportService sensorReportService, IConfiguration configuration)
     {
         _sensorService = sensorService;
+        _sensorReportService = sensorReportService;
         _configuration = configuration;
     }
 
@@ -27,6 +30,14 @@ public class SensorController : ControllerBase
         var userId = GetUserIdFromToken();
         var response = await _sensorService.GetSensorsSummary(lotId, userId);
         return Ok(response);
+    }
+
+    [HttpGet("report/{type}")]
+    public async Task<IActionResult> GetSensorMonitoringReport(int lotId, SensorType type)
+    {
+        var userId = GetUserIdFromToken();
+        var pdfBytes = await _sensorReportService.GenerateSensorMonitoringReport(lotId, userId, type);
+        return File(pdfBytes, "application/pdf", $"relatorio_monitoramento_{type}_{lotId}.pdf");
     }
 
     [HttpPost("/api/sensors/readings")]
