@@ -115,4 +115,33 @@ public class SensorService : ISensorService
 
         await _context.SaveChangesAsync();
     }
+
+    public async Task<Sensor> Create(CreateSensor request)
+    {
+        if (!await _context.Lots.AnyAsync(l => l.Id == request.LotId))
+            throw new NotFoundException("Lote não encontrado.");
+
+        if (!Enum.IsDefined(typeof(SensorType), request.Type))
+            throw new BusinessException("Tipo de sensor inválido. Tipos permitidos: 1 (Temperatura), 2 (Umidade), 3 (Nível de Água).");
+
+        // Evita duplicidade
+            var existingSensor = await _context.Sensors
+            .FirstOrDefaultAsync(s => s.MacAddress == request.MacAddress && s.Type == request.Type && s.LotId == request.LotId);
+
+        if (existingSensor != null)
+            throw new BusinessException("Já existe um sensor deste tipo e endereço MAC cadastrado para este Lote.");
+
+        var sensor = new Sensor
+        {
+            MacAddress = request.MacAddress,
+            Type = request.Type,
+            LotId = request.LotId,
+            IsActive = true
+        };
+
+        _context.Sensors.Add(sensor);
+        await _context.SaveChangesAsync();
+
+        return sensor;
+    }
 }
