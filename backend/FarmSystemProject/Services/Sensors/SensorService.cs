@@ -92,7 +92,7 @@ public class SensorService : ISensorService
         .ToListAsync();
 
         if (!Esp32Sensors.Any())
-            return;
+            throw new NotFoundException($"Nenhum sensor encontrado para o MAC Address '{payload.MacAddress}'.");
 
         var now = DateTime.Now;
 
