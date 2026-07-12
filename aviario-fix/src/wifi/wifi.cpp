@@ -23,6 +23,7 @@ void wifi_init() {
 
   if (WiFi.status() == WL_CONNECTED) {
     log_i("Wi-Fi conectado. IP: %s", WiFi.localIP().toString().c_str());
+    log_i("Endereço MAC: %s", WiFi.macAddress().c_str());
   } else {
     log_e("Falha ao conectar no Wi-Fi.");
   }
@@ -62,6 +63,7 @@ bool enviarLeituras(const SensorData &data)
   }
 
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("X-Secret-Key", SECRET_KEY);
 
   JsonDocument doc;
   doc["macAddress"] = WiFi.macAddress();
