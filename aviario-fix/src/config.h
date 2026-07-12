@@ -3,7 +3,8 @@
 
 #define WIFI_SSID "Wokwi-GUEST"
 #define WIFI_PASSWORD ""
-#define API_URL "http://172.18.179.118:5000/api/sensors/readings"
+#define API_URL "https://172.31.80.1:7172/api/sensors/readings"
+#define SECRET_KEY "Aviario_Esp32_Key_SuperSecreta123"
 
 
 // ---- Sensores ----
