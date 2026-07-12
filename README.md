@@ -129,3 +129,28 @@ Portanto, para criar e cadastrar os seus sensores no sistema, nós vamos utiliza
 #### Interagindo graficamente com os Sensores no VS Code
 * **Para mudar a Temperatura e Umidade:** Com a simulação rodando, clique em cima do sensor **DHT22** lá na tela do Wokwi no VS Code. Vai aparecer uma caixa flutuante com dois controles deslizantes. Mova as barrinhas para os lados e veja o ESP32 detectar as mudanças.
 * **Para mudar o Nível de Água:** Clique no sensor de carga **HX711** e deslize a barrinha para simular o esvaziamento ou enchimento do reservatório de água dos frangos.
+
+---
+
+### 5. Encerrando a Simulação e os Containers
+
+#### Desligando o ESP32 Virtual (Wokwi)
+1. No VS Code, vá na aba do arquivo `diagram.json` onde a simulação está acontecendo.
+2. Clique no ícone de **Pause** bem no topo da tela do simulador ou simplesmente feche o VS Code.
+
+#### Parando os Serviços do Docker
+Para desligar o Banco de Dados, o Backend e o Frontend ao mesmo tempo de forma limpa e segura:
+1. Abra o terminal na pasta raiz do projeto (`sistema-aviario`).
+2. Execute o comando abaixo para derrubar os containers:
+
+```bash
+docker-compose down
+```
+
+Aguarde até o terminal confirmar a parada de todos os serviços. O Docker manterá os seus dados salvos no banco de dados para a próxima vez que você subir o projeto. 
+
+Caso queira um reset completo use o comando:
+
+```bash
+docker-compose down -v
+```
