@@ -184,11 +184,11 @@ export default function LotDetailsScreen() {
 
                 <View className="bg-[#D1FAE5] rounded-3xl p-6 py-10 space-y-4 gap-4">
                     <MenuButton title="Coleta Diária de Ovos" onPress={() => router.push(`/egg-production-control?id=${id}`)}/>
-                    <MenuButton title="Controle de alimentação" />
                     <MenuButton title="Vacinação" onPress={() => router.push(`/vaccination-control?id=${id}`)}/>
+                    <MenuButton title="Controle de Alimentação" onPress={() => router.push(`/feeding-control?id=${id}`)}/>
+                    <MenuButton title="Controle de Gastos" onPress={() => router.push(`/feed-cost-control?id=${id}`)}/>
                     <MenuButton title="Controle de Mortalidade" onPress={() => router.push(`/mortality-control?id=${id}`)}/>
-                    <MenuButton title="Venda de Ovos" />
-                    <MenuButton title="Histórico de Produção" />
+                    <MenuButton title="Venda de Ovos" onPress={() => router.push(`/egg-sales-control?id=${id}`)}/>
                 </View>
             </ScrollView>
         </SafeAreaView>

@@ -29,6 +29,9 @@ export default function RootLayout() {
         <Stack.Screen name="mortality-control" options={{ headerShown: false }} />
         <Stack.Screen name="vaccination-control" options={{ headerShown: false }} />
         <Stack.Screen name="egg-production-control" options={{ headerShown: false }} />
+        <Stack.Screen name="feeding-control" options={{ headerShown: false }} />
+        <Stack.Screen name="feed-cost-control" options={{ headerShown: false }} />
+        <Stack.Screen name="egg-sales-control" options={{ headerShown: false }} />
       </Stack>
 
     </ThemeProvider>
