@@ -97,6 +97,7 @@ builder.Services.AddScoped<IFeedingService, FeedingService>();
 builder.Services.AddScoped<IFeedingReportService, FeedingReportService>();
 builder.Services.AddScoped<IFeedService, FeedService>();
 builder.Services.AddScoped<IFeedReportService, FeedReportService>();
+builder.Services.AddScoped<ISensorReportService, SensorReportService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

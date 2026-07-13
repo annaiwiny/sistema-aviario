@@ -144,4 +144,36 @@ public class SensorService : ISensorService
 
         return sensor;
     }
+    public async Task<List<SensorReading>> GetReadingsHistory(int lotId, int ownerId, SensorType type, DateTime from)
+    {
+        var farmId = await _context.Farms
+            .Where(f => f.OwnerId == ownerId)
+            .Select(f => f.Id)
+            .FirstOrDefaultAsync();
+
+        if (farmId == 0)
+            throw new NotFoundException("Você não possui nenhum aviário cadastrado");
+
+        var lot = await _context.Lots
+            .FirstOrDefaultAsync(l => l.Id == lotId && l.FarmId == farmId);
+
+        if (lot == null)
+            throw new NotFoundException("Lote não encontrado");
+
+        var sensorIds = await _context.Sensors
+            .Where(s => s.LotId == lotId && s.Type == type && s.IsActive)
+            .Select(s => s.Id)
+            .ToListAsync();
+
+        if (!sensorIds.Any())
+            throw new NotFoundException("Nenhum sensor ativo encontrado para este tipo de sensor no lote informado.");
+
+        var readings = await _context.SensorReadings
+            .AsNoTracking()
+            .Where(r => sensorIds.Contains(r.SensorId) && r.MeasuredAt >= from)
+            .OrderBy(r => r.MeasuredAt)
+            .ToListAsync();
+
+        return readings;
+    }
 }
