@@ -187,8 +187,9 @@ export default function LotDetailsScreen() {
                     <MenuButton title="Vacinação" onPress={() => router.push(`/vaccination-control?id=${id}`)}/>
                     <MenuButton title="Controle de Alimentação" onPress={() => router.push(`/feeding-control?id=${id}`)}/>
                     <MenuButton title="Controle de Gastos" onPress={() => router.push(`/feed-cost-control?id=${id}`)}/>
-                    <MenuButton title="Controle de Mortalidade" onPress={() => router.push(`/mortality-control?id=${id}`)}/>
                     <MenuButton title="Venda de Ovos" onPress={() => router.push(`/egg-sales-control?id=${id}`)}/>
+                    <MenuButton title="Sensoriamento" onPress={() => router.push(`/sensors-control?id=${id}`)}/>
+                    <MenuButton title="Controle de Mortalidade" onPress={() => router.push(`/mortality-control?id=${id}`)}/>
                 </View>
             </ScrollView>
         </SafeAreaView>

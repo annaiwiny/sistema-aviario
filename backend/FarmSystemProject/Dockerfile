@@ -12,6 +12,10 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libfontconfig1 fontconfig libfreetype6 fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish .
 
 ENTRYPOINT ["dotnet", "FarmSystemProject.dll"]

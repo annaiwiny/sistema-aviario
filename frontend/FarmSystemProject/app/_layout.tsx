@@ -32,6 +32,7 @@ export default function RootLayout() {
         <Stack.Screen name="feeding-control" options={{ headerShown: false }} />
         <Stack.Screen name="feed-cost-control" options={{ headerShown: false }} />
         <Stack.Screen name="egg-sales-control" options={{ headerShown: false }} />
+        <Stack.Screen name="sensors-control" options={{ headerShown: false }} />
       </Stack>
 
     </ThemeProvider>

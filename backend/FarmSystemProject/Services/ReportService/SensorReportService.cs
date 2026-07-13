@@ -86,6 +86,7 @@ public class SensorReportService : ISensorReportService
             row.RelativeItem(1).Element(c => BuildInfoCard(c, readings, type));
         });
     }
+
     private byte[] RenderChartImage(List<SensorReading> readings)
     {
         const int width = 900;
@@ -110,16 +111,16 @@ public class SensorReportService : ISensorReportService
         var chartWidth = width - padding - 20f;
         var chartHeight = height - padding - 20f;
 
-        var minValue = readings.Min(r => r.Value);
-        var maxValue = readings.Max(r => r.Value);
+        var actualMin = readings.Min(r => r.Value);
+        var actualMax = readings.Max(r => r.Value);
 
-        if (Math.Abs(maxValue - minValue) < 0.01f)
-        {
-            minValue -= 1f;
-            maxValue += 1f;
-        }
+        var margin = (actualMax - actualMin) * 0.15f;
 
-        var rangeValue = maxValue - minValue;
+        if (margin < 0.1f) margin = 2f;
+
+        var chartMinY = actualMin - margin;
+        var chartMaxY = actualMax + margin;
+        var rangeValue = chartMaxY - chartMinY;
 
         var minDate = readings.Min(r => r.MeasuredAt);
         var maxDate = readings.Max(r => r.MeasuredAt);
@@ -136,14 +137,15 @@ public class SensorReportService : ISensorReportService
         canvas.DrawLine(padding, 10, padding, height - padding, axisPaint);
         canvas.DrawLine(padding, height - padding, width - 10, height - padding, axisPaint);
 
-        // Labels do eixo Y
-        canvas.DrawText(maxValue.ToString("F1"), 5, 28, SKTextAlign.Left, font, textPaint);
-        canvas.DrawText(minValue.ToString("F1"), 5, height - padding, SKTextAlign.Left, font, textPaint);
+        // Labels do eixo Y (usa a escala visual com margem)
+        canvas.DrawText(chartMaxY.ToString("F1"), 5, 28, SKTextAlign.Left, font, textPaint);
+        canvas.DrawText(chartMinY.ToString("F1"), 5, height - padding, SKTextAlign.Left, font, textPaint);
 
         SKPoint MapPoint(SensorReading r)
         {
             var x = padding + (float)((r.MeasuredAt - minDate).TotalSeconds / rangeTime) * chartWidth;
-            var y = 10 + chartHeight - (float)((r.Value - minValue) / rangeValue) * chartHeight;
+            // Usa o chartMinY para ancorar o fundo gráfico corretamente!
+            var y = 10 + chartHeight - (float)((r.Value - chartMinY) / rangeValue) * chartHeight;
             return new SKPoint(x, y);
         }
 
@@ -159,14 +161,14 @@ public class SensorReportService : ISensorReportService
         foreach (var p in points)
             canvas.DrawCircle(p, 4f, pointPaint);
 
-        // Destaca ponto de valor máximo e mínimo
-        var maxReading = readings.First(r => r.Value == maxValue);
-        var minReading = readings.First(r => r.Value == minValue);
+        var maxReading = readings.First(r => r.Value == actualMax);
+        var minReading = readings.First(r => r.Value == actualMin);
+
         var maxPoint = MapPoint(maxReading);
         var minPoint = MapPoint(minReading);
 
-        canvas.DrawText($"Máx: {maxValue:F1} às {maxReading.MeasuredAt:HH:mm}", Math.Max(padding, maxPoint.X - 80), Math.Max(20, maxPoint.Y - 14), SKTextAlign.Left, boldFont, highlightPaint);
-        canvas.DrawText($"Mín: {minValue:F1} às {minReading.MeasuredAt:HH:mm}", Math.Max(padding, minPoint.X - 80), Math.Min(height - padding - 10, minPoint.Y + 26), SKTextAlign.Left, font, textPaint);
+        canvas.DrawText($"Máx: {actualMax:F1} às {maxReading.MeasuredAt:HH:mm}", Math.Max(padding, maxPoint.X - 80), Math.Max(20, maxPoint.Y - 14), SKTextAlign.Left, boldFont, highlightPaint);
+        canvas.DrawText($"Mín: {actualMin:F1} às {minReading.MeasuredAt:HH:mm}", Math.Max(padding, minPoint.X - 80), Math.Min(height - padding - 10, minPoint.Y + 26), SKTextAlign.Left, font, textPaint);
 
         // Labels do eixo X (início e fim do período)
         canvas.DrawText(minDate.ToString("dd/MM HH:mm"), padding, height - 5, SKTextAlign.Left, font, textPaint);
