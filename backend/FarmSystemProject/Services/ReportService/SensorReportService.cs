@@ -5,9 +5,6 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using SkiaSharp;
-using static System.Net.Mime.MediaTypeNames;
-using System.Drawing;
-using System.IO;
 
 namespace FarmSystemProject.Services.ReportService;
 
@@ -50,7 +47,7 @@ public class SensorReportService : ISensorReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text($"Relatório de Monitoramento de {TranslateType(type)}")
+                    row.RelativeItem().Text($"Relatório de Monitoramento de {_sensorService.TranslateSensorType(type)}")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(now.ToString("dd/MM/yyyy HH:mm"))
@@ -89,6 +86,7 @@ public class SensorReportService : ISensorReportService
             row.RelativeItem(1).Element(c => BuildInfoCard(c, readings, type));
         });
     }
+
     private byte[] RenderChartImage(List<SensorReading> readings)
     {
         const int width = 900;
@@ -113,16 +111,16 @@ public class SensorReportService : ISensorReportService
         var chartWidth = width - padding - 20f;
         var chartHeight = height - padding - 20f;
 
-        var minValue = readings.Min(r => r.Value);
-        var maxValue = readings.Max(r => r.Value);
+        var actualMin = readings.Min(r => r.Value);
+        var actualMax = readings.Max(r => r.Value);
 
-        if (Math.Abs(maxValue - minValue) < 0.01f)
-        {
-            minValue -= 1f;
-            maxValue += 1f;
-        }
+        var margin = (actualMax - actualMin) * 0.15f;
 
-        var rangeValue = maxValue - minValue;
+        if (margin < 0.1f) margin = 2f;
+
+        var chartMinY = actualMin - margin;
+        var chartMaxY = actualMax + margin;
+        var rangeValue = chartMaxY - chartMinY;
 
         var minDate = readings.Min(r => r.MeasuredAt);
         var maxDate = readings.Max(r => r.MeasuredAt);
@@ -139,14 +137,15 @@ public class SensorReportService : ISensorReportService
         canvas.DrawLine(padding, 10, padding, height - padding, axisPaint);
         canvas.DrawLine(padding, height - padding, width - 10, height - padding, axisPaint);
 
-        // Labels do eixo Y
-        canvas.DrawText(maxValue.ToString("F1"), 5, 28, SKTextAlign.Left, font, textPaint);
-        canvas.DrawText(minValue.ToString("F1"), 5, height - padding, SKTextAlign.Left, font, textPaint);
+        // Labels do eixo Y (usa a escala visual com margem)
+        canvas.DrawText(chartMaxY.ToString("F1"), 5, 28, SKTextAlign.Left, font, textPaint);
+        canvas.DrawText(chartMinY.ToString("F1"), 5, height - padding, SKTextAlign.Left, font, textPaint);
 
         SKPoint MapPoint(SensorReading r)
         {
             var x = padding + (float)((r.MeasuredAt - minDate).TotalSeconds / rangeTime) * chartWidth;
-            var y = 10 + chartHeight - (float)((r.Value - minValue) / rangeValue) * chartHeight;
+            // Usa o chartMinY para ancorar o fundo gráfico corretamente!
+            var y = 10 + chartHeight - (float)((r.Value - chartMinY) / rangeValue) * chartHeight;
             return new SKPoint(x, y);
         }
 
@@ -162,14 +161,14 @@ public class SensorReportService : ISensorReportService
         foreach (var p in points)
             canvas.DrawCircle(p, 4f, pointPaint);
 
-        // Destaca ponto de valor máximo e mínimo
-        var maxReading = readings.First(r => r.Value == maxValue);
-        var minReading = readings.First(r => r.Value == minValue);
+        var maxReading = readings.First(r => r.Value == actualMax);
+        var minReading = readings.First(r => r.Value == actualMin);
+
         var maxPoint = MapPoint(maxReading);
         var minPoint = MapPoint(minReading);
 
-        canvas.DrawText($"Máx: {maxValue:F1} às {maxReading.MeasuredAt:HH:mm}", Math.Max(padding, maxPoint.X - 80), Math.Max(20, maxPoint.Y - 14), SKTextAlign.Left, boldFont, highlightPaint);
-        canvas.DrawText($"Mín: {minValue:F1} às {minReading.MeasuredAt:HH:mm}", Math.Max(padding, minPoint.X - 80), Math.Min(height - padding - 10, minPoint.Y + 26), SKTextAlign.Left, font, textPaint);
+        canvas.DrawText($"Máx: {actualMax:F1} às {maxReading.MeasuredAt:HH:mm}", Math.Max(padding, maxPoint.X - 80), Math.Max(20, maxPoint.Y - 14), SKTextAlign.Left, boldFont, highlightPaint);
+        canvas.DrawText($"Mín: {actualMin:F1} às {minReading.MeasuredAt:HH:mm}", Math.Max(padding, minPoint.X - 80), Math.Min(height - padding - 10, minPoint.Y + 26), SKTextAlign.Left, font, textPaint);
 
         // Labels do eixo X (início e fim do período)
         canvas.DrawText(minDate.ToString("dd/MM HH:mm"), padding, height - 5, SKTextAlign.Left, font, textPaint);
@@ -204,60 +203,53 @@ public class SensorReportService : ISensorReportService
         var min = readings.Min(r => r.Value);
         var max = readings.Max(r => r.Value);
 
-        var (status, color, description) = EvaluateStatus(type, average, max);
+        var (status, color, description) = EvaluateStatus(type, average);
+        var unit = _sensorService.GetUnitSuffix(type);
 
         container.Background(Colors.Grey.Lighten4).Padding(8).Column(col =>
         {
             col.Item().Background(color).Padding(5).AlignCenter()
                 .Text(status).SemiBold().FontColor(Colors.White);
 
-            col.Item().PaddingTop(6).Text($"Média: {average:F1}{UnitSuffix(type)}").FontSize(10).SemiBold();
-            col.Item().Text($"Mínima: {min:F1}{UnitSuffix(type)}").FontSize(10).SemiBold();
-            col.Item().Text($"Máxima: {max:F1}{UnitSuffix(type)}").FontSize(10).SemiBold();
+            col.Item().PaddingTop(6).Text($"Média: {average:F1} {unit}").FontSize(10).SemiBold();
+            col.Item().Text($"Mínima: {min:F1} {unit}").FontSize(10).SemiBold();
+            col.Item().Text($"Máxima: {max:F1} {unit}").FontSize(10).SemiBold();
 
             col.Item().PaddingTop(6).Text(description).FontSize(9);
         });
     }
 
-    private (string status, string color, string description) EvaluateStatus(SensorType type, double average, double max)
+    private (string status, string color, string description) EvaluateStatus(SensorType type, double average)
     {
+        var status = _sensorService.CalculateSensorStatus(type, average);
+
         return type switch
         {
-            SensorType.Temperature => max >= 32
-                ? ("ALERTA CRÍTICO", Colors.Red.Darken2, "Risco: subida brusca de temperatura detectada, saindo da zona de estabilidade.")
-                : average >= 29
-                    ? ("ATENÇÃO", Colors.Orange.Medium, "Tendência de aquecimento detectada. Monitoramento intensificado recomendado.")
-                    : ("IDEAL", Colors.Green.Medium, "Temperatura dentro da faixa considerada ideal."),
+            SensorType.Temperature => status switch
+            {
+                "Ideal" => ("IDEAL", Colors.Green.Medium, "Temperatura dentro da faixa considerada ideal."),
+                "Atenção" => ("ATENÇÃO", Colors.Orange.Medium, "Temperatura fora da faixa recomendada."),
+                "Crítico" => ("ALERTA CRÍTICO", Colors.Red.Darken2, "Temperatura fora da faixa segura."),
+                _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para temperatura.")
+            },
 
-            SensorType.Humidity => average is < 40 or > 80
-                ? ("ALERTA CRÍTICO", Colors.Red.Darken2, "Umidade fora da faixa segura para o lote.")
-                : average is < 50 or > 70
-                    ? ("ATENÇÃO", Colors.Orange.Medium, "Umidade se aproximando dos limites recomendados.")
-                    : ("IDEAL", Colors.Green.Medium, "Umidade dentro da faixa considerada ideal."),
+            SensorType.Humidity => status switch
+            {
+                "Ideal" => ("IDEAL", Colors.Green.Medium, "Umidade dentro da faixa considerada ideal."),
+                "Atenção" => ("ATENÇÃO", Colors.Orange.Medium, "Umidade fora da faixa recomendada."),
+                "Crítico" => ("ALERTA CRÍTICO", Colors.Red.Darken2, "Umidade fora da faixa segura."),
+                _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para umidade.")
+            },
 
-            SensorType.WaterLevel => average < 20
-                ? ("ALERTA CRÍTICO", Colors.Red.Darken2, "Nível de água crítico. Verifique o abastecimento imediatamente.")
-                : average < 40
-                    ? ("ATENÇÃO", Colors.Orange.Medium, "Nível de água abaixo do recomendado. Monitoramento intensificado.")
-                    : ("IDEAL", Colors.Green.Medium, "Nível de água dentro do esperado."),
+            SensorType.WaterLevel => status switch
+            {
+                "Ideal" => ("IDEAL", Colors.Green.Medium, "Nível de água dentro da faixa considerada ideal."),
+                "Atenção" => ("ATENÇÃO", Colors.Orange.Medium, "Nível de água abaixo do recomendado."),
+                "Crítico" => ("ALERTA CRÍTICO", Colors.Red.Darken2, "Nível de água fora da faixa segura."),
+                _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para nível de água.")
+            },
 
             _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para este tipo de sensor.")
         };
     }
-
-    private string UnitSuffix(SensorType type) => type switch
-    {
-        SensorType.Temperature => "°C",
-        SensorType.Humidity => "%",
-        SensorType.WaterLevel => "%",
-        _ => string.Empty
-    };
-
-    private string TranslateType(SensorType type) => type switch
-    {
-        SensorType.Temperature => "Temperatura",
-        SensorType.Humidity => "Umidade",
-        SensorType.WaterLevel => "Nível de Água",
-        _ => type.ToString()
-    };
 }

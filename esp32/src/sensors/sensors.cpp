@@ -21,7 +21,18 @@ SensorData sensors_read() {
   data.humidity.valid = !isnan(data.humidity.value);
 
   data.waterLevel.type = SensorType::WaterLevel;
-  data.waterLevel.value = loadcell_readLiters();
+
+  float rawLiters = loadcell_readLiters();
+  const float MAX_VALUE = 0.921053;
+  
+  // Calcula porcentagem do nível de água
+  float waterPercentage = (rawLiters / MAX_VALUE) * 100.0f;
+  
+  // Evita cenários impossíveis
+  if (waterPercentage < 0.0f) waterPercentage = 0.0f;
+  if (waterPercentage > 100.0f) waterPercentage = 100.0f;
+
+  data.waterLevel.value = waterPercentage;
   data.waterLevel.valid = true;
 
   return data;

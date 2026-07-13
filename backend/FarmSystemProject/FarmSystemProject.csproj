@@ -22,6 +22,7 @@
     </PackageReference>
     <PackageReference Include="QuestPDF" Version="2025.12.3" />
     <PackageReference Include="SkiaSharp" Version="4.150.0" />
+	<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.150.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
