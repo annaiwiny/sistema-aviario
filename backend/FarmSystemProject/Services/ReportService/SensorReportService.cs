@@ -5,9 +5,6 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using SkiaSharp;
-using static System.Net.Mime.MediaTypeNames;
-using System.Drawing;
-using System.IO;
 
 namespace FarmSystemProject.Services.ReportService;
 
@@ -50,7 +47,7 @@ public class SensorReportService : ISensorReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text($"Relatório de Monitoramento de {TranslateType(type)}")
+                    row.RelativeItem().Text($"Relatório de Monitoramento de {_sensorService.TranslateSensorType(type)}")
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(now.ToString("dd/MM/yyyy HH:mm"))
@@ -204,60 +201,53 @@ public class SensorReportService : ISensorReportService
         var min = readings.Min(r => r.Value);
         var max = readings.Max(r => r.Value);
 
-        var (status, color, description) = EvaluateStatus(type, average, max);
+        var (status, color, description) = EvaluateStatus(type, average);
+        var unit = _sensorService.GetUnitSuffix(type);
 
         container.Background(Colors.Grey.Lighten4).Padding(8).Column(col =>
         {
             col.Item().Background(color).Padding(5).AlignCenter()
                 .Text(status).SemiBold().FontColor(Colors.White);
 
-            col.Item().PaddingTop(6).Text($"Média: {average:F1}{UnitSuffix(type)}").FontSize(10).SemiBold();
-            col.Item().Text($"Mínima: {min:F1}{UnitSuffix(type)}").FontSize(10).SemiBold();
-            col.Item().Text($"Máxima: {max:F1}{UnitSuffix(type)}").FontSize(10).SemiBold();
+            col.Item().PaddingTop(6).Text($"Média: {average:F1} {unit}").FontSize(10).SemiBold();
+            col.Item().Text($"Mínima: {min:F1} {unit}").FontSize(10).SemiBold();
+            col.Item().Text($"Máxima: {max:F1} {unit}").FontSize(10).SemiBold();
 
             col.Item().PaddingTop(6).Text(description).FontSize(9);
         });
     }
 
-    private (string status, string color, string description) EvaluateStatus(SensorType type, double average, double max)
+    private (string status, string color, string description) EvaluateStatus(SensorType type, double average)
     {
+        var status = _sensorService.CalculateSensorStatus(type, average);
+
         return type switch
         {
-            SensorType.Temperature => max >= 32
-                ? ("ALERTA CRÍTICO", Colors.Red.Darken2, "Risco: subida brusca de temperatura detectada, saindo da zona de estabilidade.")
-                : average >= 29
-                    ? ("ATENÇÃO", Colors.Orange.Medium, "Tendência de aquecimento detectada. Monitoramento intensificado recomendado.")
-                    : ("IDEAL", Colors.Green.Medium, "Temperatura dentro da faixa considerada ideal."),
+            SensorType.Temperature => status switch
+            {
+                "Ideal" => ("IDEAL", Colors.Green.Medium, "Temperatura dentro da faixa considerada ideal."),
+                "Atenção" => ("ATENÇÃO", Colors.Orange.Medium, "Temperatura fora da faixa recomendada."),
+                "Crítico" => ("ALERTA CRÍTICO", Colors.Red.Darken2, "Temperatura fora da faixa segura."),
+                _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para temperatura.")
+            },
 
-            SensorType.Humidity => average is < 40 or > 80
-                ? ("ALERTA CRÍTICO", Colors.Red.Darken2, "Umidade fora da faixa segura para o lote.")
-                : average is < 50 or > 70
-                    ? ("ATENÇÃO", Colors.Orange.Medium, "Umidade se aproximando dos limites recomendados.")
-                    : ("IDEAL", Colors.Green.Medium, "Umidade dentro da faixa considerada ideal."),
+            SensorType.Humidity => status switch
+            {
+                "Ideal" => ("IDEAL", Colors.Green.Medium, "Umidade dentro da faixa considerada ideal."),
+                "Atenção" => ("ATENÇÃO", Colors.Orange.Medium, "Umidade fora da faixa recomendada."),
+                "Crítico" => ("ALERTA CRÍTICO", Colors.Red.Darken2, "Umidade fora da faixa segura."),
+                _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para umidade.")
+            },
 
-            SensorType.WaterLevel => average < 20
-                ? ("ALERTA CRÍTICO", Colors.Red.Darken2, "Nível de água crítico. Verifique o abastecimento imediatamente.")
-                : average < 40
-                    ? ("ATENÇÃO", Colors.Orange.Medium, "Nível de água abaixo do recomendado. Monitoramento intensificado.")
-                    : ("IDEAL", Colors.Green.Medium, "Nível de água dentro do esperado."),
+            SensorType.WaterLevel => status switch
+            {
+                "Ideal" => ("IDEAL", Colors.Green.Medium, "Nível de água dentro da faixa considerada ideal."),
+                "Atenção" => ("ATENÇÃO", Colors.Orange.Medium, "Nível de água abaixo do recomendado."),
+                "Crítico" => ("ALERTA CRÍTICO", Colors.Red.Darken2, "Nível de água fora da faixa segura."),
+                _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para nível de água.")
+            },
 
             _ => ("INDEFINIDO", Colors.Grey.Medium, "Status não definido para este tipo de sensor.")
         };
     }
-
-    private string UnitSuffix(SensorType type) => type switch
-    {
-        SensorType.Temperature => "°C",
-        SensorType.Humidity => "%",
-        SensorType.WaterLevel => "%",
-        _ => string.Empty
-    };
-
-    private string TranslateType(SensorType type) => type switch
-    {
-        SensorType.Temperature => "Temperatura",
-        SensorType.Humidity => "Umidade",
-        SensorType.WaterLevel => "Nível de Água",
-        _ => type.ToString()
-    };
 }

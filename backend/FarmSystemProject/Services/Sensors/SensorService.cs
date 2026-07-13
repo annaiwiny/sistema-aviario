@@ -59,13 +59,15 @@ public class SensorService : ISensorService
             {
                 var averageValue = dataFromType.Average(s => s.LatestReading!.Value);
                 var latestData = dataFromType.Max(s => s.LatestReading!.MeasuredAt);
+                var status = CalculateSensorStatus(type, averageValue);
+                var unit = GetUnitSuffix(type);
 
                 sensorsSummary.Add(new SensorSummary
                 {
-                    Type = type.ToString(),
-                    Value = averageValue,
+                    Type = TranslateSensorType(type),
+                    Value = $"{averageValue:F1} {unit}",
                     MeasuredAt = latestData,
-                    Status = "Indefinido"
+                    Status = status
                 });
             }
 
@@ -74,7 +76,7 @@ public class SensorService : ISensorService
             {
                 sensorsSummary.Add(new SensorSummary
                 {
-                    Type = type.ToString(),
+                    Type = TranslateSensorType(type),
                     Value = null,
                     MeasuredAt = null,
                     Status = "Sem Dados"
@@ -176,4 +178,49 @@ public class SensorService : ISensorService
 
         return readings;
     }
+
+    public string CalculateSensorStatus(SensorType type, double value)
+    {
+        return type switch
+        {
+            SensorType.Temperature => value switch
+            {
+                >= 18 and <= 24 => "Ideal",
+                > 24 and <= 28 => "Atenção",
+                _ => "Crítico" // < 18 ou > 28
+            },
+
+            SensorType.Humidity => value switch
+            {
+                >= 50 and <= 70 => "Ideal",
+                > 70 and <= 80 => "Atenção",
+                _ => "Crítico" // < 50 ou > 80
+            },
+
+            SensorType.WaterLevel => value switch
+            {
+                >= 41 => "Ideal",
+                > 20 and < 41 => "Atenção",
+                _ => "Crítico" // <= 20
+            },
+
+            _ => "Indefinido"
+        };
+    }
+
+    public string TranslateSensorType(SensorType type) => type switch
+    {
+        SensorType.Temperature => "Temperatura",
+        SensorType.Humidity => "Umidade",
+        SensorType.WaterLevel => "Nível de Água",
+        _ => type.ToString()
+    };
+
+    public string GetUnitSuffix(SensorType type) => type switch
+    {
+        SensorType.Temperature => "°C",
+        SensorType.Humidity => "%",
+        SensorType.WaterLevel => "%",
+        _ => string.Empty
+    };
 }
