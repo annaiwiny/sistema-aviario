@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------------------
+# Sobreposicao de DESENVOLVIMENTO LOCAL.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+# Ou, mais simples: descomente COMPOSE_FILE no seu .env e use "docker compose up -d".
+#
+# Diferencas em relacao a producao:
+#   - ASPNETCORE_ENVIRONMENT=Development e Swagger ligado;
+#   - portas do banco e da API publicadas, mas SOMENTE em 127.0.0.1,
+#     nunca em 0.0.0.0 (o ESP32 do Wokwi roda na sua propria maquina).
+# ---------------------------------------------------------------------------
+
+services:
+  database:
+    ports:
+      - "127.0.0.1:1433:1433"
+
+  backend:
+    ports:
+      # Necessario para o Swagger e para o ESP32 do Wokwi
+      # (http://host.wokwi.internal:5000).
+      - "127.0.0.1:5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Swagger__Enabled: "true"
+
+  frontend:
+    ports:
+      - "127.0.0.1:3000:80"

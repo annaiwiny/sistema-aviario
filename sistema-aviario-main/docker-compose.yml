@@ -1,0 +1,160 @@
+# ---------------------------------------------------------------------------
+# Stack de PRODUCAO.
+#
+#   docker compose up -d --build
+#
+# O servico "frontend" fica atras do profile "full": por padrao, o comando
+# acima sobe so database + db-init + backend. E o cenario de uma VPS que
+# hospeda so o backend, com o frontend publicado a parte (ex.: hospedagem
+# compartilhada, Vercel, Netlify). Para incluir o frontend tambem (stack
+# completa numa maquina so), ative o profile:
+#
+#   docker compose --profile full up -d --build
+#
+# (ou defina COMPOSE_PROFILES=full no seu .env - e o que o .env de
+# desenvolvimento local ja faz, veja .env.example)
+#
+# Para desenvolvimento local, sobreponha com o arquivo de dev:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile full up -d --build
+# (ou defina COMPOSE_FILE e COMPOSE_PROFILES no seu .env, veja .env.example)
+#
+# Todos os segredos vem do arquivo .env, que NAO vai para o git.
+# Copie .env.example para .env e preencha antes de subir.
+# ---------------------------------------------------------------------------
+
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: farmsystem-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env}
+    # Sem "ports": a 1433 fica acessivel apenas dentro da rede do compose.
+    # O banco nao e publicado no host nem na internet.
+    expose:
+      - "1433"
+    volumes:
+      - sqlvolume:/var/opt/mssql
+    healthcheck:
+      # A senha e lida do ambiente do proprio container ($$ vira $ no shell),
+      # entao ela nao aparece na linha de comando exibida por docker inspect.
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - farmsystem-network
+
+  # Cria o banco e o usuario de aplicacao. Roda uma vez a cada subida,
+  # e idempotente, e o backend so inicia depois que ele termina com sucesso.
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: farmsystem-db-init
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no .env}
+      DB_NAME: ${DB_NAME:-FarmSystemDb}
+      DB_APP_USER: ${DB_APP_USER:-farmsystem_app}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?defina DB_APP_PASSWORD no .env}
+    volumes:
+      - ./scripts/db/init-app-user.sql:/scripts/init-app-user.sql:ro
+    entrypoint:
+      - /bin/bash
+      - -c
+      - >
+        /opt/mssql-tools18/bin/sqlcmd -S database,1433 -U sa -P "$$MSSQL_SA_PASSWORD" -C -b
+        -i /scripts/init-app-user.sql
+        -v DbName="$$DB_NAME" AppUser="$$DB_APP_USER" AppPassword="$$DB_APP_PASSWORD"
+    restart: "no"
+    networks:
+      - farmsystem-network
+
+  backend:
+    build:
+      context: ./backend/FarmSystemProject
+    container_name: farmsystem-backend
+    depends_on:
+      database:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    # Publicado so em loopback: quando o frontend roda na mesma VPS (profile
+    # "full"), o nginx dele fala com o backend pela rede interna do compose,
+    # sem precisar disso. Este bind em 127.0.0.1 existe para o cenario de
+    # backend sozinho na VPS: um proxy com TLS rodando no HOST (Caddy, nginx
+    # do sistema, etc.) alcanca a API aqui. Nunca fica exposto a internet
+    # diretamente - so quem estiver no proprio servidor acessa esta porta.
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      # Conecta como usuario de aplicacao, nao como 'sa'.
+      ConnectionStrings__DefaultConnection: "Server=database,1433;Database=${DB_NAME:-FarmSystemDb};User Id=${DB_APP_USER:-farmsystem_app};Password=${DB_APP_PASSWORD:?defina DB_APP_PASSWORD no .env};Encrypt=True;TrustServerCertificate=True;"
+
+      Jwt__Key: ${JWT_KEY:?defina JWT_KEY no .env}
+      Jwt__Issuer: ${JWT_ISSUER:-FarmSystemProject}
+      Jwt__Audience: ${JWT_AUDIENCE:-FarmSystemProject}
+      Jwt__ExpirationMinutes: ${JWT_EXPIRATION_MINUTES:-60}
+
+      Esp32Config__SecretKey: ${ESP32_SECRET_KEY:?defina ESP32_SECRET_KEY no .env}
+
+      # URL publica do frontend, usada no link de redefinicao de senha.
+      Frontend__BaseUrl: ${FRONTEND_BASE_URL:?defina FRONTEND_BASE_URL no .env}
+
+      Email__Host: ${EMAIL_HOST:-}
+      Email__Port: ${EMAIL_PORT:-587}
+      Email__EnableSsl: ${EMAIL_ENABLE_SSL:-true}
+      Email__User: ${EMAIL_USER:-}
+      Email__Password: ${EMAIL_PASSWORD:-}
+      Email__From: ${EMAIL_FROM:-Farm System}
+
+      # Vazio = nenhuma origem externa liberada. E o certo quando o frontend
+      # roda na mesma VPS (profile "full"): a chamada e /api na mesma origem,
+      # via proxy do nginx, e CORS nem entra em jogo. Se o frontend estiver
+      # em outro dominio (hospedagem separada), preencha com a URL exata dele.
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN_0:-}
+      Cors__AllowedOrigins__1: ${CORS_ALLOWED_ORIGIN_1:-}
+
+      Swagger__Enabled: ${SWAGGER_ENABLED:-false}
+      AllowedHosts: ${ALLOWED_HOSTS:-*}
+    restart: unless-stopped
+    networks:
+      - farmsystem-network
+
+  frontend:
+    # So sobe com "docker compose --profile full ..." ou COMPOSE_PROFILES=full
+    # no .env. Se o frontend for hospedado a parte (ex.: hospedagem
+    # compartilhada, Vercel), este servico nunca precisa rodar - a VPS pode
+    # nem ter a pasta frontend/ copiada para ela.
+    profiles: ["full"]
+    build:
+      context: ./frontend/FarmSystemProject
+      dockerfile: Dockerfile
+      args:
+        # Vazio = o app chama /api na propria origem (proxy do nginx).
+        # Preencha so se a API for servida em outro dominio.
+        EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-}
+    container_name: farmsystem-frontend
+    ports:
+      # Bind em 127.0.0.1 por padrao: o esperado em producao e ter um proxy
+      # com TLS (nginx/Caddy/Traefik) na frente. Para expor direto na internet,
+      # defina FRONTEND_BIND=0.0.0.0 no .env sabendo que sera HTTP puro.
+      - "${FRONTEND_BIND:-127.0.0.1}:${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - farmsystem-network
+
+volumes:
+  sqlvolume:
+
+networks:
+  farmsystem-network:
+    driver: bridge
