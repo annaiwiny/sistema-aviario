@@ -94,6 +94,11 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_HTTP_PORTS: "8080"
 
+      # Sem isto o container roda em UTC e, das 21h a meia-noite, o "hoje" do
+      # servidor ja e o dia seguinte - a coleta lancada a noite nao aparecia no
+      # grafico de postura do lote.
+      TZ: ${TZ:-America/Sao_Paulo}
+
       # Conecta como usuario de aplicacao, nao como 'sa'.
       ConnectionStrings__DefaultConnection: "Server=database,1433;Database=${DB_NAME:-FarmSystemDb};User Id=${DB_APP_USER:-farmsystem_app};Password=${DB_APP_PASSWORD:?defina DB_APP_PASSWORD no .env};Encrypt=True;TrustServerCertificate=True;"
 

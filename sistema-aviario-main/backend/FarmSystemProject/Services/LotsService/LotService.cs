@@ -153,20 +153,45 @@ public class LotService : ILotService
         // Quantidade inicial de galinhas
         var initialStock = lot.Lineages.Sum(x => x.Quantity);
 
-        // Mortes anteriores a data de hoje
-        var previousLosses = await _context.Mortalities
-            .Where(m => m.LotId == lotId && m.DateDeath.Date < today) 
-            .SumAsync(m => m.DeathQuantity + m.CutQuantity);
-
-        // Quantidade de galinhas vivas hoje
-        var birdsStartOfDay = initialStock - previousLosses;
-
         // Ovos coletados hoje
         var eggsToday = await _context.EggProductions
             .Where(e => e.LotId == lotId && e.ProductionDate.Date == today)
             .SumAsync(e => e.Quantity);
 
-        var notLaying = birdsStartOfDay - eggsToday;
+        // Sem coleta hoje, mostramos a última registrada em vez de zerar o
+        // painel - assim o gráfico nunca parece quebrado por falta de lançamento.
+        var referenceDate = today;
+        var eggsCollected = eggsToday;
+        var hasCollection = eggsToday > 0;
+
+        if (!hasCollection)
+        {
+            var lastCollectionDate = await _context.EggProductions
+                .Where(e => e.LotId == lotId && e.ProductionDate.Date <= today)
+                .OrderByDescending(e => e.ProductionDate)
+                .Select(e => (DateTime?)e.ProductionDate)
+                .FirstOrDefaultAsync();
+
+            if (lastCollectionDate.HasValue)
+            {
+                referenceDate = lastCollectionDate.Value.Date;
+                hasCollection = true;
+
+                eggsCollected = await _context.EggProductions
+                    .Where(e => e.LotId == lotId && e.ProductionDate.Date == referenceDate)
+                    .SumAsync(e => e.Quantity);
+            }
+        }
+
+        // Mortes anteriores ao dia de referência
+        var previousLosses = await _context.Mortalities
+            .Where(m => m.LotId == lotId && m.DateDeath.Date < referenceDate) 
+            .SumAsync(m => m.DeathQuantity + m.CutQuantity);
+
+        // Quantidade de galinhas vivas no dia de referência
+        var birdsStartOfDay = initialStock - previousLosses;
+
+        var notLaying = birdsStartOfDay - eggsCollected;
         // Evita valores negativos que quebrariam o frontend ao retornar.
         if (notLaying < 0) 
             notLaying = 0;
@@ -174,16 +199,18 @@ public class LotService : ILotService
         decimal percentage = 0;
         if (birdsStartOfDay > 0)
         {
-            percentage = ((decimal)eggsToday / birdsStartOfDay) * 100;
+            percentage = ((decimal)eggsCollected / birdsStartOfDay) * 100;
         }
 
         return new LotDashboardResponse
         {
             LotId = lot.Id,
             CurrentAlive = birdsStartOfDay,    
-            EggsCollectedToday = eggsToday,    
+            EggsCollectedToday = eggsCollected,    
             HensNotLayingToday = notLaying,    
-            LayingPercentage = Math.Round(percentage, 2)
+            LayingPercentage = Math.Round(percentage, 2),
+            ReferenceDate = hasCollection ? referenceDate : null,
+            IsToday = hasCollection && referenceDate == today
         };
     }
 }

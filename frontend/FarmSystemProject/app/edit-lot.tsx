@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
+import { showAlert } from '@/utils/alert';
 
 interface LineageItem {
     id?: number;
@@ -72,7 +73,7 @@ export default function EditBatchScreen() {
                     })));
                 }
             } else {
-                Alert.alert('Erro', 'Não foi possível carregar os dados do lote.');
+                showAlert('Erro', 'Não foi possível carregar os dados do lote.');
             }
         } catch (error) {
             console.error('Erro ao carregar dados', error);
@@ -101,22 +102,37 @@ export default function EditBatchScreen() {
         setLineages([...lineages, { race: '', quantity: '' }]);
     };
 
+    // Remover uma linhagem extra (o lote não pode ficar sem nenhuma)
+    const removeLineage = (index: number) => {
+        if (lineages.length <= 1) return;
+
+        setLineages(lineages.filter((_, i) => i !== index));
+    };
+
     const handleUpdate = async () => {
         try {
             setIsSaving(true);
             const token = await AsyncStorage.getItem('userToken');
 
             if (!accommodationDate) {
-                Alert.alert("Erro", "Preencha a data de alojamento");
+                showAlert("Erro", "Preencha a data de alojamento");
                 setIsSaving(false);
                 return;
             }
 
             const isoDate = formatDateToISO(accommodationDate);
             if (!isoDate) {
-                Alert.alert("Erro", "Data inválida");
+                showAlert("Erro", "Data inválida");
                 setIsSaving(false);
                 return;
+            }
+
+            for (const item of lineages) {
+                if (!item.race || !item.quantity) {
+                    showAlert("Erro", "Preencha todos os campos da linhagem ou remova a linha que estiver em branco.");
+                    setIsSaving(false);
+                    return;
+                }
             }
 
             const payload = {
@@ -145,12 +161,12 @@ export default function EditBatchScreen() {
                 const errorData = await response.json();
                 // Tenta pegar a mensagem de erro detalhada do backend ou usa uma genérica
                 const msg = errorData.message || errorData.title || 'Falha ao atualizar lote.';
-                Alert.alert('Erro', msg);
+                showAlert('Erro', msg);
             }
 
         } catch (error) {
             console.error('Erro ao salvar', error);
-            Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsSaving(false);
         }
@@ -205,9 +221,25 @@ export default function EditBatchScreen() {
                             {/* LINHAGENS DINÂMICAS */}
                             {lineages.map((item, index) => (
                                 <View key={index} className="mt-2">
-                                    <Text className="text-[#9CA3AF] font-bold mb-2 uppercase text-sm">
-                                        LINHAGEM {String(index + 1).padStart(2, '0')}
-                                    </Text>
+                                    <View className="flex-row justify-between items-center mb-2">
+                                        <Text className="text-[#9CA3AF] font-bold uppercase text-sm">
+                                            LINHAGEM {String(index + 1).padStart(2, '0')}
+                                        </Text>
+
+                                        {/* Só aparece a partir da segunda linhagem */}
+                                        {lineages.length > 1 && (
+                                            <TouchableOpacity
+                                                onPress={() => removeLineage(index)}
+                                                className="flex-row items-center p-2 -mr-2"
+                                                accessibilityLabel={`Remover linhagem ${index + 1}`}
+                                            >
+                                                <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                <Text className="text-[#EF4444] font-bold text-sm ml-1 uppercase">
+                                                    REMOVER
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
 
                                     <View className="mb-4">
                                         <Text className="text-black font-bold mb-1">Nome da raça</Text>

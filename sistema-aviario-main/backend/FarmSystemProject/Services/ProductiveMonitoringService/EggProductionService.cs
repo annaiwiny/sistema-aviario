@@ -1,6 +1,7 @@
 ﻿using FarmSystemProject.Data;
 using FarmSystemProject.DTOs.ProductiveMonitoringDTO;
 using FarmSystemProject.Exceptions;
+using FarmSystemProject.Interfaces.INotifications;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
 using FarmSystemProject.Models.ProductiveMonitoring;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace FarmSystemProject.Services.ProductiveMonitoringService;
 public class EggProductionService : IEggProductionService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public EggProductionService(AppDbContext context)
+    public EggProductionService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<EggProductionResponse> Create(int lotId, int ownerId, CreateEggProductionRequest request)
@@ -49,6 +52,9 @@ public class EggProductionService : IEggProductionService
 
         _context.EggProductions.Add(production);
         await _context.SaveChangesAsync();
+
+        // Gera alerta apenas se houver queda brusca em relação à média recente
+        await _notificationService.CheckEggProduction(lotId, production.ProductionDate);
 
         // Proteção contra divisão por zero (caso todas tenham morrido antes)
         if (birdsAliveOnDate <= 0)

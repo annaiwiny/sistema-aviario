@@ -157,6 +157,51 @@ namespace FarmSystemProject.Data.Migrations
                     b.ToTable("Lots");
                 });
 
+            modelBuilder.Entity("FarmSystemProject.Models.Notifications.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("FarmId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LotId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReferenceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmId");
+
+                    b.HasIndex("LotId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("FarmSystemProject.Models.NutritionalControl.Feed", b =>
                 {
                     b.Property<int>("Id")
@@ -249,6 +294,10 @@ namespace FarmSystemProject.Data.Migrations
 
                     b.Property<int>("LotId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("SaleDate")
                         .HasColumnType("datetime2");
@@ -435,6 +484,23 @@ namespace FarmSystemProject.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Farm");
+                });
+
+            modelBuilder.Entity("FarmSystemProject.Models.Notifications.Notification", b =>
+                {
+                    b.HasOne("FarmSystemProject.Models.Farms.Farm", "Farm")
+                        .WithMany()
+                        .HasForeignKey("FarmId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FarmSystemProject.Models.Lots.Lot", "Lot")
+                        .WithMany()
+                        .HasForeignKey("LotId");
+
+                    b.Navigation("Farm");
+
+                    b.Navigation("Lot");
                 });
 
             modelBuilder.Entity("FarmSystemProject.Models.NutritionalControl.Feed", b =>

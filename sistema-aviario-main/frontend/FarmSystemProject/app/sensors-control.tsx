@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
+import { showAlert } from '@/utils/alert';
 
 interface SensorData {
     type: string;
@@ -33,11 +34,11 @@ export default function SensorsControlScreen() {
                 const data = await response.json();
                 setSensors(data);
             } else {
-                Alert.alert('Erro', 'Não foi possível carregar os dados dos sensores.');
+                showAlert('Erro', 'Não foi possível carregar os dados dos sensores.');
             }
         } catch (error) {
             console.error(error);
-            Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setLoading(false);
         }
@@ -75,14 +76,14 @@ export default function SensorsControlScreen() {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(downloadUrl);
                 } else {
-                    Alert.alert("Sucesso", `Relatório de ${sensorName} gerado com sucesso.`);
+                    showAlert("Sucesso", `Relatório de ${sensorName} gerado com sucesso.`);
                 }
             } else {
-                Alert.alert("Erro", "Falha ao gerar o relatório do sensor.");
+                showAlert("Erro", "Falha ao gerar o relatório do sensor.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Não foi possível baixar o relatório.");
+            showAlert("Erro", "Não foi possível baixar o relatório.");
         } finally {
             setDownloadingType(null);
         }

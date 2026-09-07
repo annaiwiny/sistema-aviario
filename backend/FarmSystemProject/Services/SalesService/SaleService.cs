@@ -26,6 +26,7 @@ public class SaleService : ISaleService
             UnitValue = request.UnitValue,
             EggQuantity = request.EggQuantity,
             SaleDate = request.SaleDate,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
             LotId = lotId
         };
 
@@ -39,6 +40,7 @@ public class SaleService : ISaleService
             EggQuantity = sale.EggQuantity,
             TotalValue = sale.TotalValue,
             SaleDate = sale.SaleDate,
+            Notes = sale.Notes,
             LotId = sale.LotId
         };
     }
@@ -58,12 +60,18 @@ public class SaleService : ISaleService
         var totalEggQuantity = dailyRecords.Sum(s => s.EggQuantity);
         var totalValue = dailyRecords.Sum(s => s.TotalValue);
 
+        var dailyNotes = dailyRecords
+            .Where(s => !string.IsNullOrWhiteSpace(s.Notes))
+            .Select(s => s.Notes!.Trim())
+            .ToList();
+
         var summary = new SaleRecordSummary
         {
             SaleDate = date,
             UnitValue = Math.Round(totalValue / totalEggQuantity, 2),
             EggQuantity = totalEggQuantity,
             TotalValue = totalValue,
+            Notes = dailyNotes.Count > 0 ? string.Join(" | ", dailyNotes) : null,
         };
 
         return summary;
@@ -85,6 +93,7 @@ public class SaleService : ISaleService
                         EggQuantity = s.EggQuantity,
                         TotalValue = s.TotalValue,
                         SaleDate = s.SaleDate,
+                        Notes = s.Notes,
                         LotId = s.LotId
                     })
                     .ToListAsync();

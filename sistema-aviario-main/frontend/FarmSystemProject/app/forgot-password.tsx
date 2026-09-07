@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
+import { showAlert } from '@/utils/alert';
 
 export default function ForgotPassword() {
     const router = useRouter();
@@ -15,7 +16,7 @@ export default function ForgotPassword() {
 
     const handleSendLink = async () => {
         if (!email) {
-            Alert.alert('Erro', 'Por favor, informe um e-mail válido.');
+            showAlert('Erro', 'Por favor, informe um e-mail válido.');
             return;
         }
 
@@ -38,12 +39,12 @@ export default function ForgotPassword() {
                 // Erro: Tenta ler mensagem do backend ou usa genérica
                 const errorData = await response.json().catch(() => ({}));
                 const msg = errorData.message || 'Não foi possível enviar o link. Verifique o e-mail.';
-                Alert.alert('Erro', msg);
+                showAlert('Erro', msg);
             }
 
         } catch (error) {
             console.error('Erro ao recuperar senha', error);
-            Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsLoading(false);
         }

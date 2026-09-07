@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@/constants/Api';
 import { useModalBackHandler } from '@/hooks/use-modal-back-handler';
+import { showAlert } from '@/utils/alert';
 
 // Tipagem simplificada baseada no retorno de /api/Farm/me
 interface Lot {
@@ -105,7 +106,7 @@ export default function DashboardScreen() {
                     }
                 } catch (error) {
                     console.error('Erro de conexão:', error);
-                    Alert.alert('Erro', 'Falha ao conectar com o servidor.');
+                    showAlert('Erro', 'Falha ao conectar com o servidor.');
                 } finally {
                     setLoading(false);
                 }

@@ -2,6 +2,7 @@
 using FarmSystemProject.DTOs.HealthMonitoringDTO;
 using FarmSystemProject.Exceptions;
 using FarmSystemProject.Interfaces.IHealthMonitoring;
+using FarmSystemProject.Interfaces.INotifications;
 using FarmSystemProject.Models.HealthMonitoring;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +10,12 @@ namespace FarmSystemProject.Services.HelthMonitoringService;
 public class MortalityService : IMortalityService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public MortalityService(AppDbContext context)
+    public MortalityService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<MortalityResponse> Create(int lotId, int ownerId, CreateMortalityRequest request)
@@ -50,6 +53,9 @@ public class MortalityService : IMortalityService
 
         _context.Mortalities.Add(mortality);
         await _context.SaveChangesAsync();
+
+        // Gera alerta apenas se a mortalidade do dia ficar acima do esperado
+        await _notificationService.CheckMortality(lotId, mortality.DateDeath);
 
         return new MortalityResponse
         {

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
+import { showAlert } from '@/utils/alert';
 
 export default function Register() {
     const router = useRouter();
@@ -25,12 +26,12 @@ export default function Register() {
     const handleRegister = async () => {
         // Validação ajustada (sem address)
         if (!email || !password || !confirmPassword || !cpf || !state || !city || !phone) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
+            showAlert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
             return;
         }
 
         if (password !== confirmPassword) {
-            Alert.alert('Erro', 'As senhas não coincidem.');
+            showAlert('Erro', 'As senhas não coincidem.');
             return;
         }
 
@@ -59,13 +60,13 @@ export default function Register() {
                 setShowSuccessModal(true);
             } else {
                 const errorMessage = data.message || data.title || 'Ocorreu um erro ao realizar o cadastro.';
-                Alert.alert('Erro', errorMessage);
+                showAlert('Erro', errorMessage);
                 console.error('Erro cadastro:', data);
             }
 
         } catch (error) {
             console.error('Erro de conexão:', error);
-            Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+            showAlert('Erro', 'Não foi possível conectar ao servidor.');
         } finally {
             setIsLoading(false);
         }

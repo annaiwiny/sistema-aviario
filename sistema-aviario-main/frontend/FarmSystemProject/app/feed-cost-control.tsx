@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
 import ReportResultModal from '@/components/ReportResultModal';
+import { showAlert } from '@/utils/alert';
 
 export default function FeedCostControlScreen() {
     const { id } = useLocalSearchParams(); 
@@ -68,12 +69,12 @@ export default function FeedCostControlScreen() {
 
         // Validação básica dos campos
         if (!purchaseDate || !bagWeight || !bagQuantity || !bagValue) {
-            Alert.alert("Erro", "Preencha todos os campos do formulário.");
+            showAlert("Erro", "Preencha todos os campos do formulário.");
             return;
         }
 
         const isoDate = formatDateToISO(purchaseDate);
-        if (!isoDate) { Alert.alert("Erro", "Data de compra inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data de compra inválida."); return; }
 
         const parsedValue = parseCurrencyToFloat(bagValue);
         if (isNaN(parsedValue) || parsedValue <= 0) {
@@ -110,11 +111,11 @@ export default function FeedCostControlScreen() {
                 setBagValue('');
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                Alert.alert("Erro", errorData.message || "Falha ao registrar gasto com ração.");
+                showAlert("Erro", errorData.message || "Falha ao registrar gasto com ração.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha na conexão com o servidor.");
+            showAlert("Erro", "Falha na conexão com o servidor.");
         } finally {
             setIsLoading(false);
         }
@@ -122,9 +123,9 @@ export default function FeedCostControlScreen() {
 
     // --- 2. VERIFICAR DATA (GET summary) ---
     const handleVerify = async () => {
-        if (!verifyDate) { Alert.alert("Atenção", "Informe uma data para verificar."); return; }
+        if (!verifyDate) { showAlert("Atenção", "Informe uma data para verificar."); return; }
         const isoDate = formatDateToISO(verifyDate);
-        if (!isoDate) { Alert.alert("Erro", "Data inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
 
         setIsLoading(true);
         setVerifyError(false);
@@ -158,7 +159,7 @@ export default function FeedCostControlScreen() {
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha ao buscar dados do relatório.");
+            showAlert("Erro", "Falha ao buscar dados do relatório.");
         } finally {
             setIsLoading(false);
         }
@@ -192,14 +193,14 @@ export default function FeedCostControlScreen() {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(downloadUrl);
                 } else {
-                    Alert.alert("Sucesso", "PDF gerado com sucesso.");
+                    showAlert("Sucesso", "PDF gerado com sucesso.");
                 }
             } else {
-                Alert.alert("Erro", "Falha ao gerar o PDF.");
+                showAlert("Erro", "Falha ao gerar o PDF.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Não foi possível baixar o PDF.");
+            showAlert("Erro", "Não foi possível baixar o PDF.");
         } finally {
             setIsLoading(false);
         }

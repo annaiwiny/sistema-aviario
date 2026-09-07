@@ -295,6 +295,10 @@ namespace FarmSystemProject.Data.Migrations
                     b.Property<int>("LotId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime>("SaleDate")
                         .HasColumnType("datetime2");
 

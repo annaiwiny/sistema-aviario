@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
+import { showAlert } from '@/utils/alert';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const router = useRouter();
 
 const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            showAlert('Erro', 'Por favor, preencha todos os campos.');
             return;
         }
 
@@ -73,12 +76,12 @@ const handleLogin = async () => {
 
             } else {
                 const errorMessage = data.message || 'E-mail ou senha inválidos.';
-                Alert.alert('Erro', errorMessage);
+                showAlert('Erro', errorMessage);
             }
 
         } catch (error) {
             console.error('Login error:', error);
-            Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+            showAlert('Erro', 'Não foi possível conectar ao servidor.');
         } finally {
             setIsLoading(false);
         }
@@ -124,13 +127,29 @@ const handleLogin = async () => {
                         <Text className="text-black font-semibold mb-2 ml-1 text-base">
                             Senha <Text className="text-red-500">*</Text>
                         </Text>
-                        <TextInput
-                            className="bg-gray-200 rounded-lg p-4 text-base text-gray-800 shadow"
-                            placeholder="*************"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                        />
+                        <View className="relative justify-center">
+                            <TextInput
+                                className="bg-gray-200 rounded-lg p-4 pr-14 text-base text-gray-800 shadow"
+                                placeholder="*************"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!showPassword}
+                                autoCapitalize="none"
+                            />
+
+                            {/* Olho: mostra ou esconde a senha digitada */}
+                            <TouchableOpacity
+                                onPress={() => setShowPassword(!showPassword)}
+                                className="absolute right-0 h-full px-4 justify-center"
+                                accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                            >
+                                <Ionicons
+                                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                    size={22}
+                                    color="#8B5CF6"
+                                />
+                            </TouchableOpacity>
+                        </View>
                         <Link href="/forgot-password" asChild>
                             <TouchableOpacity>
                                 <Text className="text-blue-600 font-bold mt-2 ml-1">Esqueceu a senha?</Text>

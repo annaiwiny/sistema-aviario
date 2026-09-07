@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
 import ReportResultModal from '@/components/ReportResultModal';
+import { showAlert } from '@/utils/alert';
 
 export default function EggProductionControlScreen() {
     const { id } = useLocalSearchParams(); 
@@ -52,11 +53,11 @@ export default function EggProductionControlScreen() {
     // --- 1. REGISTRAR PRODUÇÃO ---
     const handleRegister = async () => {
         if (!date || !quantity) {
-            Alert.alert("Erro", "Preencha a data e a quantidade.");
+            showAlert("Erro", "Preencha a data e a quantidade.");
             return;
         }
         const isoDate = formatDateToISO(date);
-        if (!isoDate) { Alert.alert("Erro", "Data inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
 
         setIsLoading(true);
         try {
@@ -82,11 +83,11 @@ export default function EggProductionControlScreen() {
             } else {
                 const errorData = await response.json();
                 // O backend pode retornar erro se Qtd > Galinhas Vivas
-                Alert.alert("Erro", errorData.message || "Falha ao registrar produção.");
+                showAlert("Erro", errorData.message || "Falha ao registrar produção.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha na conexão.");
+            showAlert("Erro", "Falha na conexão.");
         } finally {
             setIsLoading(false);
         }
@@ -94,9 +95,9 @@ export default function EggProductionControlScreen() {
 
     // --- 2. VERIFICAR DATA ---
     const handleVerify = async () => {
-        if (!verifyDate) { Alert.alert("Atenção", "Informe uma data."); return; }
+        if (!verifyDate) { showAlert("Atenção", "Informe uma data."); return; }
         const isoDate = formatDateToISO(verifyDate);
-        if (!isoDate) { Alert.alert("Erro", "Data inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
 
         setIsLoading(true);
         try {
@@ -117,11 +118,11 @@ export default function EggProductionControlScreen() {
                 setIsoReportDate(isoDate);
                 setShowReportModal(true);
             } else {
-                Alert.alert("Aviso", "Nenhum registro para esta data.");
+                showAlert("Aviso", "Nenhum registro para esta data.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha ao buscar dados.");
+            showAlert("Erro", "Falha ao buscar dados.");
         } finally {
             setIsLoading(false);
         }
@@ -155,14 +156,14 @@ export default function EggProductionControlScreen() {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(downloadUrl);
                 } else {
-                    Alert.alert("Sucesso", "PDF gerado (Mobile pendente).");
+                    showAlert("Sucesso", "PDF gerado (Mobile pendente).");
                 }
             } else {
-                Alert.alert("Erro", "Falha ao gerar o PDF.");
+                showAlert("Erro", "Falha ao gerar o PDF.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Não foi possível baixar o PDF.");
+            showAlert("Erro", "Não foi possível baixar o PDF.");
         } finally {
             setIsLoading(false);
         }

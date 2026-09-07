@@ -14,4 +14,7 @@ public class CreateSaleRecord
 
     [Required(ErrorMessage = "A data de venda é obrigatória.")]
     public DateTime SaleDate { get; set; }
+
+    [MaxLength(500, ErrorMessage = "A observação deve ter no máximo 500 caracteres.")]
+    public string? Notes { get; set; }
 }

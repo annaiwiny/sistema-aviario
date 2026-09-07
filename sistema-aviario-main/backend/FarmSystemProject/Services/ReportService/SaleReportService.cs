@@ -56,17 +56,27 @@ public class SaleReportService : ISaleReportService
 
                     foreach (var item in sales)
                     {
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text(item.SaleDate.ToString("dd/MM/yyyy"));
+                        var hasNotes = !string.IsNullOrWhiteSpace(item.Notes);
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text($"R$ {item.UnitValue:F2}");
+                        // Sem observação a linha fecha com borda; com observação a borda
+                        // fica embaixo do texto da observação, mantendo os dois juntos.
+                        static IContainer Row(IContainer cell, bool bordered) => bordered
+                            ? cell.BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            : cell.PaddingHorizontal(5).PaddingTop(5);
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text(item.EggQuantity.ToString());
+                        Row(table.Cell(), !hasNotes).Text(item.SaleDate.ToString("dd/MM/yyyy"));
+                        Row(table.Cell(), !hasNotes).Text($"R$ {item.UnitValue:F2}");
+                        Row(table.Cell(), !hasNotes).Text(item.EggQuantity.ToString());
+                        Row(table.Cell(), !hasNotes).Text($"R$ {item.TotalValue:F2}");
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text($"R$ {item.TotalValue:F2}");
+                        if (hasNotes)
+                        {
+                            table.Cell().ColumnSpan(4)
+                                .BorderBottom(1).BorderColor(Colors.Grey.Lighten4)
+                                .PaddingHorizontal(5).PaddingBottom(5)
+                                .Text($"Obs.: {item.Notes}")
+                                .FontSize(10).Italic().FontColor(Colors.Grey.Darken1);
+                        }
                     }
                 });
 
@@ -127,14 +137,24 @@ public class SaleReportService : ISaleReportService
 
                     foreach (var item in dailySales)
                     {
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text($"R$ {item.UnitValue:F2}");
+                        var hasNotes = !string.IsNullOrWhiteSpace(item.Notes);
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text(item.EggQuantity.ToString());
+                        static IContainer Row(IContainer cell, bool bordered) => bordered
+                            ? cell.BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
+                            : cell.PaddingHorizontal(5).PaddingTop(5);
 
-                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            .Text($"R$ {item.TotalValue:F2}");
+                        Row(table.Cell(), !hasNotes).Text($"R$ {item.UnitValue:F2}");
+                        Row(table.Cell(), !hasNotes).Text(item.EggQuantity.ToString());
+                        Row(table.Cell(), !hasNotes).Text($"R$ {item.TotalValue:F2}");
+
+                        if (hasNotes)
+                        {
+                            table.Cell().ColumnSpan(3)
+                                .BorderBottom(1).BorderColor(Colors.Grey.Lighten4)
+                                .PaddingHorizontal(5).PaddingBottom(5)
+                                .Text($"Obs.: {item.Notes}")
+                                .FontSize(10).Italic().FontColor(Colors.Grey.Darken1);
+                        }
                     }
                 });
 

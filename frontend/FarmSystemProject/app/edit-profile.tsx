@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
 // 1. IMPORTAR O MODAL
 import SuccessModal from '@/components/SuccessModal';
+import { showAlert } from '@/utils/alert';
 
 export default function EditProfile() {
     const router = useRouter();
@@ -83,12 +84,12 @@ export default function EditProfile() {
             } else {
                 const errorData = await response.json();
                 const msg = errorData.message || errorData.title || 'Falha ao atualizar perfil.';
-                Alert.alert('Erro', msg);
+                showAlert('Erro', msg);
             }
 
         } catch (error) {
             console.error('Erro ao salvar', error);
-            Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsSaving(false);
         }

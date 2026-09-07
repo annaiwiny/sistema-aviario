@@ -21,6 +21,10 @@ public class Sale
     [Required]
     public DateTime SaleDate { get; set; }
 
+    // Campo livre e opcional: justifica ovos colhidos que não foram vendidos
+    [MaxLength(500)]
+    public string? Notes { get; set; }
+
     [Required]
     public int LotId { get; set; }
 

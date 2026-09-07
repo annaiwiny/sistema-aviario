@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
 import ReportResultModal from '@/components/ReportResultModal';
+import { showAlert } from '@/utils/alert';
 
 export default function EggSalesControlScreen() {
     const { id } = useLocalSearchParams(); 
@@ -21,6 +22,7 @@ export default function EggSalesControlScreen() {
     const [saleDate, setSaleDate] = useState(formattedToday);
     const [unitValue, setUnitValue] = useState('');
     const [eggQuantity, setEggQuantity] = useState('');
+    const [notes, setNotes] = useState('');
 
     // --- ESTADOS DE ERRO/VALIDAÇÃO ---
     const [verifyError, setVerifyError] = useState(false);
@@ -62,16 +64,16 @@ export default function EggSalesControlScreen() {
     // --- 1. REGISTRAR VENDA (POST) ---
     const handleRegister = async () => {
         if (!saleDate || !unitValue || !eggQuantity) {
-            Alert.alert("Erro", "Preencha todos os campos do formulário.");
+            showAlert("Erro", "Preencha todos os campos do formulário.");
             return;
         }
 
         const isoDate = formatDateToISO(saleDate);
-        if (!isoDate) { Alert.alert("Erro", "Data de venda inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data de venda inválida."); return; }
 
         const parsedUnitValue = parseCurrencyToFloat(unitValue);
         if (isNaN(parsedUnitValue) || parsedUnitValue <= 0) {
-            Alert.alert("Erro", "Informe um valor unitário válido.");
+            showAlert("Erro", "Informe um valor unitário válido.");
             return;
         }
 
@@ -83,7 +85,9 @@ export default function EggSalesControlScreen() {
             const payload = {
                 unitValue: parsedUnitValue,
                 eggQuantity: parseInt(eggQuantity) || 0,
-                saleDate: new Date(isoDate).toISOString()
+                saleDate: new Date(isoDate).toISOString(),
+                // Campo opcional: vai como null quando o usuário não escreve nada
+                notes: notes.trim() ? notes.trim() : null
             };
 
             const response = await fetch(`${API_URL}/api/lots/${id}/sales`, {
@@ -99,13 +103,14 @@ export default function EggSalesControlScreen() {
                 setShowSuccessModal(true);
                 setUnitValue('');
                 setEggQuantity('');
+                setNotes('');
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                Alert.alert("Erro", errorData.message || "Falha ao registrar venda de ovos.");
+                showAlert("Erro", errorData.message || "Falha ao registrar venda de ovos.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha na conexão com o servidor.");
+            showAlert("Erro", "Falha na conexão com o servidor.");
         } finally {
             setIsLoading(false);
         }
@@ -113,9 +118,9 @@ export default function EggSalesControlScreen() {
 
     // --- 2. VERIFICAR DATA (GET summary) ---
     const handleVerify = async () => {
-        if (!verifyDate) { Alert.alert("Atenção", "Informe uma data para verificar."); return; }
+        if (!verifyDate) { showAlert("Atenção", "Informe uma data para verificar."); return; }
         const isoDate = formatDateToISO(verifyDate);
-        if (!isoDate) { Alert.alert("Erro", "Data inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
 
         setIsLoading(true);
         setVerifyError(false);
@@ -133,11 +138,18 @@ export default function EggSalesControlScreen() {
                     : (data.eggQuantity || 0) * (data.unitValue || 0);
                 
                 // Labels sem o ':' final para evitar duplicação visual no modal
-                setReportData([
+                const linhas = [
                     { label: 'Valor Unidade', value: `R$ ${Number(data.unitValue || 0).toFixed(2).replace('.', ',')}` },
                     { label: 'Quantidade de Ovos', value: `${data.eggQuantity || 0}` },
                     { label: 'Valor Total', value: `R$ ${Number(totalCalculado).toFixed(2).replace('.', ',')}` }
-                ]);
+                ];
+
+                // Só entra na lista quando existe observação registrada no dia
+                if (data.notes) {
+                    linhas.push({ label: 'Observações', value: data.notes });
+                }
+
+                setReportData(linhas);
                 
                 setReportDateDisplay(verifyDate);
                 setIsoReportDate(isoDate);
@@ -147,7 +159,7 @@ export default function EggSalesControlScreen() {
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha ao buscar dados do relatório.");
+            showAlert("Erro", "Falha ao buscar dados do relatório.");
         } finally {
             setIsLoading(false);
         }
@@ -181,14 +193,14 @@ export default function EggSalesControlScreen() {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(downloadUrl);
                 } else {
-                    Alert.alert("Sucesso", "PDF gerado com sucesso.");
+                    showAlert("Sucesso", "PDF gerado com sucesso.");
                 }
             } else {
-                Alert.alert("Erro", "Falha ao gerar o PDF.");
+                showAlert("Erro", "Falha ao gerar o PDF.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Não foi possível baixar o PDF.");
+            showAlert("Erro", "Não foi possível baixar o PDF.");
         } finally {
             setIsLoading(false);
         }
@@ -249,6 +261,22 @@ export default function EggSalesControlScreen() {
                         </View>
                     </View>
 
+                    {/* Campo: Observações (opcional) */}
+                    <View>
+                        <Text className="text-black font-bold mb-1 text-base">Observações</Text>
+                        <TextInput 
+                            className="bg-gray-200 rounded-lg p-3 text-black text-base shadow-sm h-24"
+                            value={notes}
+                            onChangeText={setNotes}
+                            placeholder="Opcional. Ex.: 30 ovos consumidos em casa"
+                            placeholderTextColor="#9CA3AF"
+                            multiline
+                            numberOfLines={3}
+                            maxLength={500}
+                            textAlignVertical="top"
+                        />
+                    </View>
+
                     <TouchableOpacity 
                         className="bg-[#8B5CF6] py-4 rounded-full items-center mt-6 shadow-md shadow-purple-200 w-40 self-center"
                         onPress={handleRegister}
@@ -276,7 +304,7 @@ export default function EggSalesControlScreen() {
                     </View>
                     
                     {verifyError && (
-                        <Text className="text-red-600 font-bold text-xs mt-1">Informe uma data no formato aa/aa/aaaa</Text>
+                        <Text className="text-red-600 font-bold text-xs mt-1">Não há dados referente a essa data</Text>
                     )}
 
                     <TouchableOpacity 

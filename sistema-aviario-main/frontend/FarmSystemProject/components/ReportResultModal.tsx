@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useModalBackHandler } from '@/hooks/use-modal-back-handler';
 
 interface ReportRow {
     label: string;
@@ -26,19 +27,21 @@ export default function ReportResultModal({
     onDownloadPdf,
     isDownloading = false
 }: ReportResultModalProps) {
+    // O voltar do celular/navegador fecha o modal em vez de sair da tela
+    const close = useModalBackHandler(visible, onClose);
 
     return (
         <Modal
             animationType="fade"
             transparent={true}
             visible={visible}
-            onRequestClose={onClose}
+            onRequestClose={close}
         >
             <View className="flex-1 bg-black/60 justify-center items-center px-4">
                 <View className="bg-[#F3F4F6] w-full max-w-md rounded-3xl p-6 shadow-xl">
                     
                     {/* Header Voltar */}
-                    <TouchableOpacity onPress={onClose} className="flex-row items-center mb-4 self-start">
+                    <TouchableOpacity onPress={close} className="flex-row items-center mb-4 self-start">
                         <Ionicons name="chevron-back" size={24} color="#8B5CF6" />
                         <Text className="text-[#8B5CF6] font-bold text-base ml-1">voltar</Text>
                     </TouchableOpacity>
@@ -59,8 +62,9 @@ export default function ReportResultModal({
                                 key={index} 
                                 className={`flex-row justify-between p-3 border-gray-300 ${index < data.length - 1 ? 'border-b' : ''}`}
                             >
-                                <Text className="text-black font-bold text-base">{row.label}:</Text>
-                                <Text className="text-black text-base">{row.value}</Text>
+                                <Text className="text-black font-bold text-base mr-3">{row.label}:</Text>
+                                {/* flex-1 deixa textos longos (observações) quebrarem em vez de estourar a linha */}
+                                <Text className="text-black text-base flex-1 text-right">{row.value}</Text>
                             </View>
                         ))}
                     </View>

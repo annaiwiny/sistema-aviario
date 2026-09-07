@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -7,11 +7,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@/constants/Api';
+import { useModalBackHandler } from '@/hooks/use-modal-back-handler';
+import { showAlert } from '@/utils/alert';
 
 // Tipagem simplificada baseada no retorno de /api/Farm/me
 interface Lot {
     id: number;
     accommodationDate: string;
+}
+
+// Notificações reais vindas de /api/notifications
+interface Notification {
+    id: number;
+    type: string; // "alert" | "production" | "sensor"
+    title: string;
+    description: string;
+    createdAt: string;
+    isRead: boolean;
+    lotId: number | null;
 }
 
 export default function DashboardScreen() {
@@ -21,13 +34,38 @@ export default function DashboardScreen() {
     const [lots, setLots] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [loadingNotifications, setLoadingNotifications] = useState(false);
+
     const router = useRouter();
 
-    // Notificações estáticas (Frontend Mock)
-    const notifications = [
-        { id: 1, title: 'Alta Taxa de Mortalidade', time: '14:24', desc: 'Lote 01 ultrapassou 99%', icon: 'alert', type: 'alert' },
-        { id: 2, title: 'Início de Postura', time: '14:24', desc: 'Lote 01 deu inicio a postura de ovos', icon: 'chicken', type: 'info' },
-    ];
+    // O voltar do celular/navegador fecha o modal e mantém o usuário no menu principal
+    const closeNotifications = useModalBackHandler(modalVisible, () => setModalVisible(false));
+
+    // Busca os alertas gerados pelo backend (mortalidade anormal, queda de postura, sensor crítico)
+    const loadNotifications = async () => {
+        try {
+            setLoadingNotifications(true);
+            const token = await AsyncStorage.getItem('userToken');
+
+            if (!token) return;
+
+            const response = await fetch(`${API_URL}/api/notifications`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data: Notification[] = await response.json();
+                setNotifications(data);
+                setUnreadCount(data.filter((n) => !n.isRead).length);
+            }
+        } catch (error) {
+            console.log('Erro ao buscar notificações:', error);
+        } finally {
+            setLoadingNotifications(false);
+        }
+    };
 
     useFocusEffect(
         React.useCallback(() => {
@@ -35,7 +73,7 @@ export default function DashboardScreen() {
                 try {
                     setLoading(true);
                     const token = await AsyncStorage.getItem('userToken');
-                    
+
                     if (!token) {
                         router.replace('/'); // Chuta pro login se não tiver token
                         return;
@@ -48,10 +86,10 @@ export default function DashboardScreen() {
 
                     if (response.ok) {
                         const data = await response.json();
-                        
+
                         // 1. Atualiza Nome da Granja
                         setAviaryName(data.name);
-                        
+
                         // 2. Salva ID para uso futuro (garantia)
                         await AsyncStorage.setItem('farmId', data.id.toString());
 
@@ -68,23 +106,60 @@ export default function DashboardScreen() {
                     }
                 } catch (error) {
                     console.error('Erro de conexão:', error);
-                    Alert.alert('Erro', 'Falha ao conectar com o servidor.');
+                    showAlert('Erro', 'Falha ao conectar com o servidor.');
                 } finally {
                     setLoading(false);
                 }
             };
 
             loadDashboardData();
+            loadNotifications();
         }, [])
     );
+
+    // Abre o modal, atualiza a lista e zera o contador do sino
+    const openNotifications = async () => {
+        setModalVisible(true);
+        await loadNotifications();
+
+        if (unreadCount === 0) return;
+
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+
+            if (!token) return;
+
+            await fetch(`${API_URL}/api/notifications/read-all`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            setUnreadCount(0);
+        } catch (error) {
+            console.log('Erro ao marcar notificações como lidas:', error);
+        }
+    };
 
     const getIcon = (type: string) => {
         switch (type) {
             case 'alert': return <Ionicons name="alert-circle-outline" size={32} color="black" />;
-            case 'info': return <MaterialCommunityIcons name="bird" size={32} color="black" />;
             case 'production': return <MaterialCommunityIcons name="basket" size={32} color="black" />;
+            case 'sensor': return <MaterialCommunityIcons name="thermometer-alert" size={32} color="black" />;
+            case 'info': return <MaterialCommunityIcons name="bird" size={32} color="black" />;
             default: return <Ionicons name="notifications-outline" size={32} color="black" />;
         }
+    };
+
+    // Mostra só a hora quando o alerta é de hoje, senão inclui a data
+    const formatMoment = (value: string) => {
+        const date = new Date(value);
+
+        if (isNaN(date.getTime())) return '';
+
+        const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const isToday = date.toDateString() === new Date().toDateString();
+
+        return isToday ? time : `${date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${time}`;
     };
 
     return (
@@ -101,9 +176,12 @@ export default function DashboardScreen() {
                         {aviaryName}
                     </Text>
 
-                    <TouchableOpacity className="relative" onPress={() => setModalVisible(true)}>
+                    <TouchableOpacity className="relative" onPress={openNotifications}>
                         <FontAwesome name="bell" size={32} color="#8B5CF6" />
-                        <View className="absolute top-0 right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white" />
+                        {/* A bolinha só aparece quando existe alerta real não lido */}
+                        {unreadCount > 0 && (
+                            <View className="absolute top-0 right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white" />
+                        )}
                     </TouchableOpacity>
                 </View>
 
@@ -151,40 +229,60 @@ export default function DashboardScreen() {
                 </View>
             </View>
 
-            {/* Notifications Modal (Mantive igual pois é visual) */}
+            {/* Notifications Modal */}
             <Modal
                 animationType="fade"
                 transparent={true}
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                onRequestClose={closeNotifications}
             >
                 <TouchableOpacity
                     style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}
                     activeOpacity={1}
-                    onPress={() => setModalVisible(false)}
+                    onPress={closeNotifications}
                 >
                     <TouchableWithoutFeedback>
                         <View className="bg-gray-300 w-[90%] h-[85%] rounded-3xl p-6 shadow-2xl">
-                            <Text className="text-3xl font-bold text-center mb-8 uppercase tracking-wider">NOTIFICAÇÕES</Text>
+                            <TouchableOpacity
+                                onPress={closeNotifications}
+                                className="flex-row items-center self-start -ml-2 p-2"
+                            >
+                                <Ionicons name="chevron-back" size={24} color="#8B5CF6" />
+                                <Text className="text-[#8B5CF6] font-bold text-base ml-1">voltar</Text>
+                            </TouchableOpacity>
 
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                {notifications.map((item) => (
-                                    <View key={item.id} className="bg-purple-300 p-4 rounded-xl mb-4 flex-row items-center shadow-sm border border-purple-400">
-                                        <View className="flex-1 mr-2">
-                                            <View className="flex-row items-baseline mb-1">
-                                                <Text className="font-bold text-lg text-black mr-2">{item.title}</Text>
-                                                <Text className="text-sm text-gray-800">{item.time}</Text>
+                            <Text className="text-3xl font-bold text-center mb-6 mt-2 uppercase tracking-wider">NOTIFICAÇÕES</Text>
+
+                            {loadingNotifications && notifications.length === 0 ? (
+                                <ActivityIndicator size="large" color="#8B5CF6" className="mt-10" />
+                            ) : notifications.length === 0 ? (
+                                <View className="flex-1 items-center justify-center px-4">
+                                    <Ionicons name="notifications-off-outline" size={48} color="#6B7280" />
+                                    <Text className="text-gray-700 font-bold text-lg mt-4">Nenhuma notificação</Text>
+                                    <Text className="text-gray-600 text-center mt-2">
+                                        Você será avisado aqui quando algum lote apresentar uma ocorrência fora do normal.
+                                    </Text>
+                                </View>
+                            ) : (
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    {notifications.map((item) => (
+                                        <View key={item.id} className="bg-purple-300 p-4 rounded-xl mb-4 flex-row items-center shadow-sm border border-purple-400">
+                                            <View className="flex-1 mr-2">
+                                                <View className="flex-row items-baseline mb-1">
+                                                    <Text className="font-bold text-lg text-black mr-2">{item.title}</Text>
+                                                    <Text className="text-sm text-gray-800">{formatMoment(item.createdAt)}</Text>
+                                                </View>
+                                                <Text className="text-gray-900 font-medium">{item.description}</Text>
                                             </View>
-                                            <Text className="text-gray-900 font-medium">{item.desc}</Text>
+                                            <View>
+                                                {getIcon(item.type)}
+                                            </View>
                                         </View>
-                                        <View>
-                                            {getIcon(item.type)}
-                                        </View>
-                                    </View>
-                                ))}
-                            </ScrollView>
+                                    ))}
+                                </ScrollView>
+                            )}
 
-                            <Text className="text-center text-gray-600 font-semibold mt-4">Toque fora da aba para sair</Text>
+                            <Text className="text-center text-gray-600 font-semibold mt-4">Toque em voltar ou fora da aba para sair</Text>
                         </View>
                     </TouchableWithoutFeedback>
                 </TouchableOpacity>

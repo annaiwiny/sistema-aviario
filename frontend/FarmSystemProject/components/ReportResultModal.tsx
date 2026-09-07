@@ -62,8 +62,9 @@ export default function ReportResultModal({
                                 key={index} 
                                 className={`flex-row justify-between p-3 border-gray-300 ${index < data.length - 1 ? 'border-b' : ''}`}
                             >
-                                <Text className="text-black font-bold text-base">{row.label}:</Text>
-                                <Text className="text-black text-base">{row.value}</Text>
+                                <Text className="text-black font-bold text-base mr-3">{row.label}:</Text>
+                                {/* flex-1 deixa textos longos (observações) quebrarem em vez de estourar a linha */}
+                                <Text className="text-black text-base flex-1 text-right">{row.value}</Text>
                             </View>
                         ))}
                     </View>

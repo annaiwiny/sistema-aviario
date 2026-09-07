@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router'; // Importar Stack
 import Svg, { Path, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
+import { showAlert } from '@/utils/alert';
 
 export default function ResetPassword() {
     const router = useRouter();
@@ -18,21 +19,21 @@ export default function ResetPassword() {
 
     useEffect(() => {
         if (!token) {
-            Alert.alert('Atenção', 'Link de recuperação inválido ou expirado.');
+            showAlert('Atenção', 'Link de recuperação inválido ou expirado.');
         }
     }, [token]);
 
     const handleResetPassword = async () => {
         if (!token) {
-            Alert.alert('Erro', 'Token de recuperação não encontrado.');
+            showAlert('Erro', 'Token de recuperação não encontrado.');
             return;
         }
         if (!newPassword || !confirmPassword) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            showAlert('Erro', 'Por favor, preencha todos os campos.');
             return;
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert('Erro', 'As senhas não coincidem.');
+            showAlert('Erro', 'As senhas não coincidem.');
             return;
         }
 
@@ -58,12 +59,12 @@ export default function ResetPassword() {
             } else {
                 const errorData = await response.json().catch(() => ({}));
                 const msg = errorData.message || 'Não foi possível redefinir a senha.';
-                Alert.alert('Erro', msg);
+                showAlert('Erro', msg);
             }
 
         } catch (error) {
             console.error('Erro reset senha', error);
-            Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsLoading(false);
         }

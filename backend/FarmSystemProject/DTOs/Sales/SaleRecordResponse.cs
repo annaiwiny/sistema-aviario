@@ -7,5 +7,6 @@ public class SaleRecordResponse
     public int EggQuantity { get; set; }
     public decimal TotalValue { get; set; }
     public DateTime SaleDate { get; set; }
+    public string? Notes { get; set; }
     public int LotId { get; set; }
 }

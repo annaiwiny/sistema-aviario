@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
+import { showAlert } from '@/utils/alert';
 import SuccessModal from '@/components/SuccessModal'; // Importando o Modal
 
 export default function WelcomeScreen() {
@@ -16,7 +17,7 @@ export default function WelcomeScreen() {
 
     const handleRegister = async () => {
         if (!aviaryName.trim()) {
-            Alert.alert('Erro', 'Por favor, informe o nome do aviário.');
+            showAlert('Erro', 'Por favor, informe o nome do aviário.');
             return;
         }
 
@@ -52,12 +53,12 @@ export default function WelcomeScreen() {
                 setShowSuccessModal(true);
             } else {
                 const errorData = await response.json();
-                Alert.alert('Erro', errorData.title || 'Falha ao criar aviário.');
+                showAlert('Erro', errorData.title || 'Falha ao criar aviário.');
             }
 
         } catch (error) {
             console.error(error);
-            Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+            showAlert('Erro', 'Não foi possível conectar ao servidor.');
         } finally {
             setIsLoading(false);
         }

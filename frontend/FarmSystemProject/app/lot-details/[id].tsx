@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
+import { showAlert } from '@/utils/alert';
 
 interface LotDashboardData {
     lotId: number;
@@ -13,6 +15,10 @@ interface LotDashboardData {
     eggsCollectedToday: number;
     hensNotLayingToday: number;
     layingPercentage: number;
+    // Opcionais: só existem a partir da versão da API que devolve o dia de
+    // referência. Ausentes = backend ainda não atualizado.
+    referenceDate?: string | null;
+    isToday?: boolean;
 }
 
 export default function LotDetailsScreen() {
@@ -22,30 +28,52 @@ export default function LotDetailsScreen() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<LotDashboardData | null>(null);
 
-    useEffect(() => {
-        const fetchDashboard = async () => {
-            try {
-                const token = await AsyncStorage.getItem('userToken');
-                const response = await fetch(`${API_URL}/api/Lot/${id}/dashboard`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+    // Deixa à vista de que dia são os números: hoje, ou a última coleta lançada.
+    const collectionLabel = () => {
+        if (!data) return '';
 
-                if (response.ok) {
-                    const result = await response.json();
-                    setData(result);
-                } else {
-                    Alert.alert('Erro', 'Não foi possível carregar os dados do lote.');
-                }
-            } catch (error) {
-                console.error(error);
-                Alert.alert('Erro', 'Falha na conexão com o servidor.');
-            } finally {
-                setLoading(false);
+        // Campo ausente (API antiga): os números são sempre do dia corrente
+        if (data.referenceDate === undefined) {
+            const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            return `Coleta de hoje (${hoje})`;
+        }
+
+        if (!data.referenceDate) return 'Nenhuma coleta registrada ainda';
+
+        const date = new Date(data.referenceDate);
+        const formatted = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+        return data.isToday ? `Coleta de hoje (${formatted})` : `Última coleta: ${formatted}`;
+    };
+
+    const fetchDashboard = React.useCallback(async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const response = await fetch(`${API_URL}/api/Lot/${id}/dashboard`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setData(result);
+            } else {
+                showAlert('Erro', 'Não foi possível carregar os dados do lote.');
             }
-        };
-
-        if (id) fetchDashboard();
+        } catch (error) {
+            console.error(error);
+            showAlert('Erro', 'Falha na conexão com o servidor.');
+        } finally {
+            setLoading(false);
+        }
     }, [id]);
+
+    // Recarrega sempre que a tela ganha foco. Com useEffect os números ficavam
+    // congelados ao voltar da coleta diária, porque a tela não é remontada.
+    useFocusEffect(
+        React.useCallback(() => {
+            if (id) fetchDashboard();
+        }, [id, fetchDashboard])
+    );
 
     const PieChart = () => {
         if (!data) return null;
@@ -139,6 +167,7 @@ export default function LotDetailsScreen() {
                     )}
                 </Svg>
                 <Text className="font-bold text-black mt-2">POSTURA: {data.layingPercentage}%</Text>
+                <Text className="text-gray-500 text-xs mt-1">{collectionLabel()}</Text>
             </View>
         );
     };

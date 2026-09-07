@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Svg, { G, Path } from 'react-native-svg';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@/constants/Api';
+import { showAlert } from '@/utils/alert';
 
 interface UserData {
     email: string;
@@ -65,7 +66,7 @@ export default function Profile() {
 
                 } catch (error) {
                     console.error('Erro ao carregar perfil', error);
-                    Alert.alert('Erro', 'Não foi possível carregar os dados.');
+                    showAlert('Erro', 'Não foi possível carregar os dados.');
                 } finally {
                     setLoading(false);
                 }

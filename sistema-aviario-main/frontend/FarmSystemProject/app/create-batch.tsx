@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import SuccessModal from '@/components/SuccessModal';
 import { API_URL } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { showAlert } from '@/utils/alert';
 
 // Interface para os itens de linhagem
 interface LineageItem {
@@ -36,6 +37,13 @@ export default function CreateBatch() {
         setLineages([...lineages, newItem]);
     };
 
+    // Remover uma linhagem extra (a primeira é obrigatória e não pode ser removida)
+    const removeLineage = (id: number) => {
+        if (lineages.length <= 1) return;
+
+        setLineages(lineages.filter(item => item.id !== id));
+    };
+
     // Atualizar valores dos inputs dinâmicos
     const updateLineage = (id: number, field: keyof LineageItem, value: string) => {
         const updated = lineages.map(item => {
@@ -50,13 +58,13 @@ export default function CreateBatch() {
 const handleRegister = async () => {
         // 1. Validação básica
         if (!accommodationDate) {
-            Alert.alert('Erro', 'Informe a data de alojamento.');
+            showAlert('Erro', 'Informe a data de alojamento.');
             return;
         }
 
         for (const item of lineages) {
             if (!item.raceName || !item.quantity) {
-                Alert.alert('Erro', 'Preencha todos os campos da linhagem.');
+                showAlert('Erro', 'Preencha todos os campos da linhagem ou remova a linha que estiver em branco.');
                 return;
             }
         }
@@ -69,7 +77,7 @@ const handleRegister = async () => {
             // O nome do aviário não é usado no cadastro do lote, removi para limpar.
             
             if (!token) {
-                Alert.alert('Erro', 'Usuário não autenticado.');
+                showAlert('Erro', 'Usuário não autenticado.');
                 router.replace('/');
                 return;
             }
@@ -103,12 +111,12 @@ const handleRegister = async () => {
                 setShowSuccess(true);
             } else {
                 const errorData = await response.json();
-                Alert.alert('Erro', errorData.title || 'Falha ao cadastrar lote.');
+                showAlert('Erro', errorData.title || 'Falha ao cadastrar lote.');
             }
 
         } catch (error) {
             console.error(error);
-            Alert.alert('Erro', 'Falha na conexão com o servidor.');
+            showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setIsLoading(false);
         }
@@ -165,9 +173,25 @@ const handleRegister = async () => {
                 {/* Linhagens Dinâmicas */}
                 {lineages.map((item, index) => (
                     <View key={item.id} className="mb-6">
-                        <Text className="text-[#9CA3AF] font-bold mb-2 uppercase text-sm">
-                            LINHAGEM {String(index + 1).padStart(2, '0')}
-                        </Text>
+                        <View className="flex-row justify-between items-center mb-2">
+                            <Text className="text-[#9CA3AF] font-bold uppercase text-sm">
+                                LINHAGEM {String(index + 1).padStart(2, '0')}
+                            </Text>
+
+                            {/* Só aparece a partir da segunda linhagem */}
+                            {lineages.length > 1 && (
+                                <TouchableOpacity
+                                    onPress={() => removeLineage(item.id)}
+                                    className="flex-row items-center p-2 -mr-2"
+                                    accessibilityLabel={`Remover linhagem ${index + 1}`}
+                                >
+                                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                    <Text className="text-[#EF4444] font-bold text-sm ml-1 uppercase">
+                                        REMOVER
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
 
                         <Text className="text-black font-bold mb-1">Nome da raça</Text>
                         <TextInput

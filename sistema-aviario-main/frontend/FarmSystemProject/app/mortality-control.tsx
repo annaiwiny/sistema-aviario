@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/Api';
 import SuccessModal from '@/components/SuccessModal';
 import ReportResultModal from '@/components/ReportResultModal';
+import { showAlert } from '@/utils/alert';
 
 export default function MortalityControlScreen() {
     const { id } = useLocalSearchParams(); 
@@ -51,11 +52,11 @@ export default function MortalityControlScreen() {
     // --- 1. REGISTRAR MORTALIDADE ---
     const handleRegister = async () => {
         if (!date || (!deaths && !cuts)) {
-            Alert.alert("Erro", "Preencha a data e pelo menos uma quantidade.");
+            showAlert("Erro", "Preencha a data e pelo menos uma quantidade.");
             return;
         }
         const isoDate = formatDateToISO(date);
-        if (!isoDate) { Alert.alert("Erro", "Data inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
 
         setIsLoading(true);
         try {
@@ -81,11 +82,11 @@ export default function MortalityControlScreen() {
                 setDeaths(''); setCuts(''); setReason('');
             } else {
                 const errorData = await response.json();
-                Alert.alert("Erro", errorData.message || "Falha ao registrar.");
+                showAlert("Erro", errorData.message || "Falha ao registrar.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha na conexão.");
+            showAlert("Erro", "Falha na conexão.");
         } finally {
             setIsLoading(false);
         }
@@ -93,9 +94,9 @@ export default function MortalityControlScreen() {
 
     // --- 2. VERIFICAR DATA (ABRE MODAL) ---
     const handleVerify = async () => {
-        if (!verifyDate) { Alert.alert("Atenção", "Informe uma data."); return; }
+        if (!verifyDate) { showAlert("Atenção", "Informe uma data."); return; }
         const isoDate = formatDateToISO(verifyDate);
-        if (!isoDate) { Alert.alert("Erro", "Data inválida."); return; }
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
 
         setIsLoading(true);
         try {
@@ -119,11 +120,11 @@ export default function MortalityControlScreen() {
                 setIsoReportDate(isoDate);
                 setShowReportModal(true);
             } else {
-                Alert.alert("Aviso", "Nenhum registro para esta data.");
+                showAlert("Aviso", "Nenhum registro para esta data.");
             }
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Falha ao buscar dados.");
+            showAlert("Erro", "Falha ao buscar dados.");
         } finally {
             setIsLoading(false);
         }
@@ -161,15 +162,15 @@ export default function MortalityControlScreen() {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(downloadUrl);
                 } else {
-                    Alert.alert("Aviso", "Download nativo não implementado nesta versão web-first.");
+                    showAlert("Aviso", "Download nativo não implementado nesta versão web-first.");
                 }
             } else {
-                Alert.alert("Erro", "Falha ao gerar o PDF.");
+                showAlert("Erro", "Falha ao gerar o PDF.");
             }
 
         } catch (error) {
             console.error(error);
-            Alert.alert("Erro", "Não foi possível baixar o PDF.");
+            showAlert("Erro", "Não foi possível baixar o PDF.");
         } finally {
             setIsLoading(false);
         }
