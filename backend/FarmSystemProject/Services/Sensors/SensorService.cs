@@ -1,6 +1,7 @@
 ﻿using FarmSystemProject.Data;
 using FarmSystemProject.DTOs.Sensors;
 using FarmSystemProject.Exceptions;
+using FarmSystemProject.Interfaces.INotifications;
 using FarmSystemProject.Interfaces.ISensors;
 using FarmSystemProject.Models.Sensors;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,12 @@ namespace FarmSystemProject.Services.Sensors;
 public class SensorService : ISensorService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public SensorService(AppDbContext context)
+    public SensorService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<List<SensorSummary>> GetSensorsSummary(int lotId, int ownerId)
@@ -97,6 +100,7 @@ public class SensorService : ISensorService
             throw new NotFoundException($"Nenhum sensor encontrado para o MAC Address '{payload.MacAddress}'.");
 
         var now = DateTime.Now;
+        var savedReadings = new List<(Sensor Sensor, float Value)>();
 
         foreach (var reading in payload.Readings)
         {
@@ -113,9 +117,20 @@ public class SensorService : ISensorService
                     MeasuredAt = now
                 }
             );
+
+            savedReadings.Add((sensor, reading.Value));
         }
 
         await _context.SaveChangesAsync();
+
+        // Gera alerta apenas quando a leitura entra na faixa crítica
+        foreach (var (sensor, value) in savedReadings)
+        {
+            var status = CalculateSensorStatus(sensor.Type, value);
+            var formattedValue = $"{value:F1} {GetUnitSuffix(sensor.Type)}";
+
+            await _notificationService.CheckSensorReading(sensor.LotId, sensor.Type, status, formattedValue, now);
+        }
     }
 
     public async Task<Sensor> Create(CreateSensor request)

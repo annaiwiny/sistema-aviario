@@ -1,6 +1,7 @@
 ﻿using FarmSystemProject.Models.Farms;
 using FarmSystemProject.Models.Lots;
 using FarmSystemProject.Models.HealthMonitoring;
+using FarmSystemProject.Models.Notifications;
 using FarmSystemProject.Models.NutritionalControl;
 using FarmSystemProject.Models.ProductiveMonitoring;
 using FarmSystemProject.Models.Users;
@@ -28,6 +29,7 @@ public class AppDbContext : DbContext
     public DbSet<Sale> Sales { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
     public DbSet<SensorReading> SensorReadings { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
