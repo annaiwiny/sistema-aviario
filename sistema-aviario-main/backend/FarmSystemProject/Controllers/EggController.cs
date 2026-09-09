@@ -29,6 +29,16 @@ public class EggProductionController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { lotId }, response);
     }
 
+    // Corrige a coleta de um dia já lançado: o valor enviado SUBSTITUI o total
+    // do dia em vez de somar com o que já estava lá.
+    [HttpPut]
+    public async Task<ActionResult<EggProductionResponse>> UpdateByDate(int lotId, [FromBody] UpdateEggProductionRequest request)
+    {
+        var userId = GetUserIdFromToken();
+        var response = await _service.UpdateByDate(lotId, userId, request);
+        return Ok(response);
+    }
+
     // Como usar: /api/lots/5/eggs/summary?date=2026-05-20
     [HttpGet("summary")]
     public async Task<ActionResult<EggProductionDateSummary>> GetSummary(int lotId, [FromQuery] DateTime date)

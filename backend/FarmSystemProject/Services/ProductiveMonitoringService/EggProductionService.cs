@@ -3,6 +3,7 @@ using FarmSystemProject.DTOs.ProductiveMonitoringDTO;
 using FarmSystemProject.Exceptions;
 using FarmSystemProject.Interfaces.INotifications;
 using FarmSystemProject.Interfaces.IProductiveMonitoring;
+using FarmSystemProject.Models.Lots;
 using FarmSystemProject.Models.ProductiveMonitoring;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,16 +30,7 @@ public class EggProductionService : IEggProductionService
         if (lot == null)
             throw new NotFoundException("Lote não encontrado.");
 
-        // Quantidade inicial de galinhas (Lá no cadastro do novo lote)
-        var initialStock = lot.Lineages.Sum(x => x.Quantity);
-
-        // Quantidade de galinhas que morreram anteriores a data informada
-        var previousLosses = await _context.Mortalities
-            .Where(m => m.LotId == lotId && m.DateDeath.Date <= request.ProductionDate.Date)
-            .SumAsync(m => m.DeathQuantity + m.CutQuantity);
-
-        // Total de aves vivas no início do dia consultado
-        var birdsAliveOnDate = initialStock - previousLosses;
+        var birdsAliveOnDate = await GetBirdsAliveOnDate(lot, request.ProductionDate);
 
         if (request.Quantity > birdsAliveOnDate)
             throw new BusinessException($"Erro: Você informou {request.Quantity} ovos, mas o lote só possui {birdsAliveOnDate}.");
@@ -72,6 +64,69 @@ public class EggProductionService : IEggProductionService
             LotId = production.LotId,
             LayingRate = rate
         };
+    }
+
+    public async Task<EggProductionResponse> UpdateByDate(int lotId, int ownerId, UpdateEggProductionRequest request)
+    {
+        var lot = await _context.Lots
+            .AsNoTracking()
+            .Include(l => l.Lineages)
+            .FirstOrDefaultAsync(l => l.Id == lotId && l.Farm.OwnerId == ownerId);
+
+        if (lot == null)
+            throw new NotFoundException("Lote não encontrado.");
+
+        var records = await _context.EggProductions
+            .Where(e => e.LotId == lotId && e.ProductionDate.Date == request.ProductionDate.Date)
+            .OrderBy(e => e.Id)
+            .ToListAsync();
+
+        if (records.Count == 0)
+            throw new NotFoundException("Não há coleta registrada nessa data para corrigir.");
+
+        var birdsAliveOnDate = await GetBirdsAliveOnDate(lot, request.ProductionDate);
+
+        if (request.Quantity > birdsAliveOnDate)
+            throw new BusinessException($"Erro: Você informou {request.Quantity} ovos, mas o lote só possui {birdsAliveOnDate}.");
+
+        // O dia fica com um único lançamento valendo o total corrigido. Se os
+        // demais lançamentos do mesmo dia continuassem existindo, o relatório e o
+        // gráfico voltariam a somá-los em cima da correção.
+        var production = records[0];
+        production.Quantity = request.Quantity;
+
+        if (records.Count > 1)
+            _context.EggProductions.RemoveRange(records.Skip(1));
+
+        await _context.SaveChangesAsync();
+
+        await _notificationService.CheckEggProduction(lotId, production.ProductionDate);
+
+        var rate = birdsAliveOnDate > 0
+            ? Math.Round(((decimal)production.Quantity / birdsAliveOnDate) * 100, 2)
+            : 0;
+
+        return new EggProductionResponse
+        {
+            Id = production.Id,
+            ProductionDate = production.ProductionDate,
+            Quantity = production.Quantity,
+            LotId = production.LotId,
+            LayingRate = rate
+        };
+    }
+
+    // Aves vivas no dia informado: estoque inicial do lote menos as mortes e
+    // descartes lançados até aquela data.
+    private async Task<int> GetBirdsAliveOnDate(Lot lot, DateTime date)
+    {
+        var initialStock = lot.Lineages.Sum(x => x.Quantity);
+
+        var previousLosses = await _context.Mortalities
+            .Where(m => m.LotId == lot.Id && m.DateDeath.Date <= date.Date)
+            .SumAsync(m => m.DeathQuantity + m.CutQuantity);
+
+        return initialStock - previousLosses;
     }
 
     public async Task<EggProductionDateSummary?> GetSummaryByDate(int lotId, int ownerId, DateTime date)

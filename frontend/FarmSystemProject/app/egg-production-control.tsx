@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -28,6 +28,12 @@ export default function EggProductionControlScreen() {
     // --- CONTROLES ---
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('ADIÇÃO REALIZADA COM SUCESSO');
+
+    // Coleta que já existe na data digitada. Enquanto estiver preenchida, o
+    // usuário precisa escolher entre corrigir o valor do dia ou somar ao que
+    // já havia - era essa escolha que faltava e fazia o total estourar.
+    const [conflict, setConflict] = useState<{ isoDate: string; dateDisplay: string; existing: number; typed: number } | null>(null);
     
     // --- MODAL DE RELATÓRIO ---
     const [showReportModal, setShowReportModal] = useState(false);
@@ -50,26 +56,34 @@ export default function EggProductionControlScreen() {
         setter(v);
     };
 
-    // --- 1. REGISTRAR PRODUÇÃO ---
-    const handleRegister = async () => {
-        if (!date || !quantity) {
-            showAlert("Erro", "Preencha a data e a quantidade.");
-            return;
-        }
-        const isoDate = formatDateToISO(date);
-        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
+    // Total já lançado na data, ou null se ainda não houver nada.
+    const fetchExistingTotal = async (isoDate: string): Promise<number | null> => {
+        const token = await AsyncStorage.getItem('userToken');
+        const response = await fetch(`${API_URL}/api/lots/${id}/eggs/summary?date=${isoDate}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
+        // 404 = dia sem lançamento nenhum, que aqui não é erro.
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        return data.totalQuantity ?? null;
+    };
+
+    // Grava a coleta. 'replace' usa PUT e o valor passa a ser o total do dia;
+    // 'add' usa POST e soma ao que já estava lançado.
+    const saveEntry = async (isoDate: string, value: number, mode: 'add' | 'replace') => {
         setIsLoading(true);
         try {
             const token = await AsyncStorage.getItem('userToken');
-            
+
             const payload = {
                 productionDate: new Date(isoDate).toISOString(),
-                quantity: parseInt(quantity) || 0
+                quantity: value
             };
 
             const response = await fetch(`${API_URL}/api/lots/${id}/eggs`, {
-                method: 'POST',
+                method: mode === 'replace' ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -78,6 +92,9 @@ export default function EggProductionControlScreen() {
             });
 
             if (response.ok) {
+                setSuccessMessage(mode === 'replace'
+                    ? 'COLETA ATUALIZADA COM SUCESSO'
+                    : 'ADIÇÃO REALIZADA COM SUCESSO');
                 setShowSuccessModal(true);
                 setQuantity(''); // Limpa quantidade, mantém data
             } else {
@@ -91,6 +108,37 @@ export default function EggProductionControlScreen() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // --- 1. REGISTRAR PRODUÇÃO ---
+    const handleRegister = async () => {
+        if (!date || !quantity) {
+            showAlert("Erro", "Preencha a data e a quantidade.");
+            return;
+        }
+        const isoDate = formatDateToISO(date);
+        if (!isoDate) { showAlert("Erro", "Data inválida."); return; }
+
+        const typed = parseInt(quantity) || 0;
+
+        setIsLoading(true);
+        try {
+            const existing = await fetchExistingTotal(isoDate);
+
+            if (existing !== null) {
+                // Já tem coleta nesse dia: pergunta antes de mexer no valor.
+                setConflict({ isoDate, dateDisplay: date, existing, typed });
+                return;
+            }
+        } catch (error) {
+            console.error(error);
+            showAlert("Erro", "Falha na conexão.");
+            return;
+        } finally {
+            setIsLoading(false);
+        }
+
+        await saveEntry(isoDate, typed, 'add');
     };
 
     // --- 2. VERIFICAR DATA ---
@@ -261,10 +309,63 @@ export default function EggProductionControlScreen() {
             </ScrollView>
 
             {/* MODAIS */}
+            {/* Escolha do que fazer quando o dia já tem coleta lançada */}
+            <Modal
+                animationType="fade"
+                transparent
+                visible={conflict !== null}
+                onRequestClose={() => setConflict(null)}
+            >
+                <View className="flex-1 bg-black/50 justify-center items-center px-6">
+                    <View className="bg-white rounded-[32px] p-7 w-full max-w-[340px] elevation-5 shadow-lg">
+                        <Text className="text-xl font-black text-black mb-2 text-center">
+                            Já existe coleta nesse dia
+                        </Text>
+                        <Text className="text-gray-600 text-center text-base mb-6 leading-5">
+                            Em {conflict?.dateDisplay} já constam{' '}
+                            <Text className="font-bold text-black">{conflict?.existing} ovos</Text>.
+                            {'\n'}O que você quer fazer com os {conflict?.typed} que digitou?
+                        </Text>
+
+                        <TouchableOpacity
+                            className="bg-[#8B5CF6] w-full py-4 rounded-full items-center mb-3 shadow-md shadow-purple-200"
+                            disabled={isLoading}
+                            onPress={() => {
+                                const c = conflict;
+                                setConflict(null);
+                                if (c) saveEntry(c.isoDate, c.typed, 'replace');
+                            }}
+                        >
+                            <Text className="text-white font-bold text-base">
+                                Corrigir para {conflict?.typed}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            className="bg-[#D1FAE5] w-full py-4 rounded-full items-center mb-3 border border-green-200"
+                            disabled={isLoading}
+                            onPress={() => {
+                                const c = conflict;
+                                setConflict(null);
+                                if (c) saveEntry(c.isoDate, c.typed, 'add');
+                            }}
+                        >
+                            <Text className="text-green-800 font-bold text-base">
+                                Somar (fica {(conflict?.existing ?? 0) + (conflict?.typed ?? 0)})
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity className="w-full py-3 items-center" onPress={() => setConflict(null)}>
+                            <Text className="text-gray-500 font-bold text-base">Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <SuccessModal 
                 visible={showSuccessModal} 
                 onClose={() => setShowSuccessModal(false)} 
-                message="ADIÇÃO REALIZADA COM SUCESSO"
+                message={successMessage}
             />
 
             <ReportResultModal 

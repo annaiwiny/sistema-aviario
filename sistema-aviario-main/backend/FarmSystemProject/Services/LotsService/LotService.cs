@@ -166,8 +166,10 @@ public class LotService : ILotService
 
         if (!hasCollection)
         {
+            // Quantity > 0: um lançamento zerado não conta como coleta, senão o
+            // painel ficaria preso nele em vez de recuar até a última coleta real.
             var lastCollectionDate = await _context.EggProductions
-                .Where(e => e.LotId == lotId && e.ProductionDate.Date <= today)
+                .Where(e => e.LotId == lotId && e.ProductionDate.Date <= today && e.Quantity > 0)
                 .OrderByDescending(e => e.ProductionDate)
                 .Select(e => (DateTime?)e.ProductionDate)
                 .FirstOrDefaultAsync();
