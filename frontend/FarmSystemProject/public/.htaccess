@@ -1,0 +1,31 @@
+# Roteamento do app na hospedagem Apache (public_html).
+#
+# O app tem uma pagina so (index.html) e as rotas - /dashboard,
+# /egg-production-control, /lot-details/3 - existem apenas no navegador.
+# Sem estas regras, atualizar a pagina (F5) numa rota dessas faz o Apache
+# procurar um arquivo com esse nome, nao achar e devolver 404 (ou cair no
+# index de outra forma), derrubando a sessao e voltando para o login.
+#
+# Arquivo de verdade (JS, CSS, imagem) e servido normalmente; qualquer outro
+# caminho entrega o index.html e o app resolve a rota.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # /api nunca e do frontend: se houver proxy para o backend, ele responde.
+  RewriteRule ^api/ - [L]
+
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# O index nao pode ser cacheado: e ele que aponta para os bundles com hash no
+# nome. Cacheado, o navegador continua carregando a versao antiga do app
+# depois de um deploy.
+<IfModule mod_headers.c>
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>

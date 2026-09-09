@@ -116,14 +116,19 @@ public class EggProductionService : IEggProductionService
         };
     }
 
-    // Aves vivas no dia informado: estoque inicial do lote menos as mortes e
-    // descartes lançados até aquela data.
+    // Aves vivas no início do dia informado: estoque inicial do lote menos as
+    // mortes e descartes lançados em dias ANTERIORES.
+    //
+    // O '<' (e não '<=') importa: uma ave que morreu no dia 8 estava viva na
+    // manhã do dia 8 e pôs ovo. Descontando-a, o cadastro recusava uma coleta
+    // legítima ("você informou 380 ovos, mas o lote só possui 350") e o número
+    // divergia do painel do lote, que sempre usou o dia anterior.
     private async Task<int> GetBirdsAliveOnDate(Lot lot, DateTime date)
     {
         var initialStock = lot.Lineages.Sum(x => x.Quantity);
 
         var previousLosses = await _context.Mortalities
-            .Where(m => m.LotId == lot.Id && m.DateDeath.Date <= date.Date)
+            .Where(m => m.LotId == lot.Id && m.DateDeath.Date < date.Date)
             .SumAsync(m => m.DeathQuantity + m.CutQuantity);
 
         return initialStock - previousLosses;

@@ -6,5 +6,5 @@ public interface ILotService
     Task<LotResponse> Create(int ownerId, CreateLotRequest request);
     Task<LotResponse> GetById(int id, int ownerId);
     Task<LotResponse> UpdateAsync(int id, int ownerId, UpdateLotRequest request);
-    Task<LotDashboardResponse> GetDashboardSummary(int lotId, int ownerId);
+    Task<LotDashboardResponse> GetDashboardSummary(int lotId, int ownerId, DateTime? clientToday = null);
 }

@@ -139,7 +139,7 @@ public class LotService : ILotService
         };
     }
 
-    public async Task<LotDashboardResponse> GetDashboardSummary(int lotId, int ownerId)
+    public async Task<LotDashboardResponse> GetDashboardSummary(int lotId, int ownerId, DateTime? clientToday = null)
     {
         var lot = await _context.Lots
             .AsNoTracking()
@@ -149,7 +149,9 @@ public class LotService : ILotService
         if (lot == null) 
             throw new NotFoundException("Lote não encontrado.");
 
-        var today = DateTime.Today;
+        // Dia de hoje do aparelho do usuario; DateTime.Today so entra se o
+        // cliente nao mandar nada (versao antiga do app).
+        var today = clientToday?.Date ?? DateTime.Today;
         // Quantidade inicial de galinhas
         var initialStock = lot.Lineages.Sum(x => x.Quantity);
 
@@ -187,7 +189,7 @@ public class LotService : ILotService
 
         // Mortes anteriores ao dia de referência
         var previousLosses = await _context.Mortalities
-            .Where(m => m.LotId == lotId && m.DateDeath.Date < referenceDate) 
+            .Where(m => m.LotId == lotId && m.DateDeath.Date < referenceDate)
             .SumAsync(m => m.DeathQuantity + m.CutQuantity);
 
         // Quantidade de galinhas vivas no dia de referência

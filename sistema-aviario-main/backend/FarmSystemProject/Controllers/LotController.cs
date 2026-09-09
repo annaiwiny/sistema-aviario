@@ -43,11 +43,15 @@ public class LotController : ControllerBase
         return Ok(response);
     }
 
+    // O parametro 'date' e o dia de hoje SEGUNDO O APARELHO de quem abriu a
+    // tela. Sem ele o painel dependia do relogio e do fuso do servidor: rodando
+    // em UTC, das 21h a meia-noite o "hoje" do container ja era o dia seguinte
+    // e a coleta lancada a noite sumia do grafico.
     [HttpGet("{id}/dashboard")]
-    public async Task<ActionResult<LotDashboardResponse>> GetDashboardSummary(int id)
+    public async Task<ActionResult<LotDashboardResponse>> GetDashboardSummary(int id, [FromQuery] DateTime? date = null)
     {
         var userId = GetUserIdFromToken();
-        var summary = await _lotService.GetDashboardSummary(id, userId);
+        var summary = await _lotService.GetDashboardSummary(id, userId, date);
         return Ok(summary);
     }
 

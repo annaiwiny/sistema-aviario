@@ -46,10 +46,22 @@ export default function LotDetailsScreen() {
         return data.isToday ? `Coleta de hoje (${formatted})` : `Última coleta: ${formatted}`;
     };
 
+    // Hoje segundo ESTE aparelho, em ISO. Mandamos ao backend para que o "hoje"
+    // do painel seja o do usuário, e não o relógio/fuso do servidor: rodando em
+    // UTC, das 21h à meia-noite o servidor já estava no dia seguinte e a coleta
+    // lançada à noite sumia do gráfico.
+    const localToday = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
     const fetchDashboard = React.useCallback(async () => {
         try {
             const token = await AsyncStorage.getItem('userToken');
-            const response = await fetch(`${API_URL}/api/Lot/${id}/dashboard`, {
+            const response = await fetch(`${API_URL}/api/Lot/${id}/dashboard?date=${localToday()}`, {
+                // Sem isto o navegador pode reaproveitar a resposta anterior e o
+                // gráfico continua mostrando os números de antes da coleta.
+                cache: 'no-store',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
