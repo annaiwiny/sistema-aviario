@@ -70,6 +70,20 @@ export default function EggProductionControlScreen() {
         return data.totalQuantity ?? null;
     };
 
+    // Mensagem de erro da API. Nem toda resposta de erro traz JSON: um 405 do
+    // ASP.NET vem sem corpo e uma página de erro do proxy vem em HTML. Sem
+    // isolar o parse, o `json()` estourava e o erro real virava "falha na
+    // conexão", que manda procurar o problema no lugar errado.
+    const readErrorMessage = async (response: Response, fallback: string) => {
+        try {
+            const data = await response.json();
+            if (data?.message) return data.message;
+        } catch {
+            // corpo vazio ou não-JSON: sobra o status, que já diz muita coisa
+        }
+        return `${fallback} (erro ${response.status})`;
+    };
+
     // Grava a coleta. 'replace' usa PUT e o valor passa a ser o total do dia;
     // 'add' usa POST e soma ao que já estava lançado.
     const saveEntry = async (isoDate: string, value: number, mode: 'add' | 'replace') => {
@@ -98,9 +112,8 @@ export default function EggProductionControlScreen() {
                 setShowSuccessModal(true);
                 setQuantity(''); // Limpa quantidade, mantém data
             } else {
-                const errorData = await response.json();
                 // O backend pode retornar erro se Qtd > Galinhas Vivas
-                showAlert("Erro", errorData.message || "Falha ao registrar produção.");
+                showAlert("Erro", await readErrorMessage(response, "Falha ao registrar produção."));
             }
         } catch (error) {
             console.error(error);
