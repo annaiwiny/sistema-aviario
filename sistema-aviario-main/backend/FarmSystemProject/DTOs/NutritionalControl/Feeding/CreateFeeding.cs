@@ -5,7 +5,7 @@ namespace FarmSystemProject.DTOs.NutritionalControl.Feeding;
 public class CreateFeeding
 {
     [Required(ErrorMessage = "A quantidade é obrigatória.")]
-    [Range(typeof(decimal), "0.01", "2147483647", ErrorMessage = "A quantidade deve ser maior que zero.")]
+    [Range(typeof(decimal), "0.01", "2147483647", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true, ErrorMessage = "A quantidade deve ser maior que zero.")]
     public decimal ConsumptionQuantity { get; set; }
 
     [Required(ErrorMessage = "A data de consumo é obrigatória.")]

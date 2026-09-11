@@ -1,4 +1,5 @@
-﻿using FarmSystemProject.Models.Lots;
+using FarmSystemProject.Models.Farms;
+using FarmSystemProject.Models.Lots;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -25,9 +26,19 @@ public class Sale
     [MaxLength(500)]
     public string? Notes { get; set; }
 
+    // A venda pertence à GRANJA, não ao lote: os ovos de todos os lotes são
+    // juntados antes de vender, então não há como dizer de qual lote saiu cada
+    // dúzia. Este é o vínculo obrigatório.
     [Required]
-    public int LotId { get; set; }
+    public int FarmId { get; set; }
+
+    [ForeignKey("FarmId")]
+    public Farm Farm { get; set; } = null!;
+
+    // Opcional e mantido apenas por causa das vendas antigas, lançadas quando a
+    // tela ficava dentro do lote. Vendas novas entram sem lote nenhum.
+    public int? LotId { get; set; }
 
     [ForeignKey("LotId")]
-    public Lot Lot { get; set; } = null!;
+    public Lot? Lot { get; set; }
 }

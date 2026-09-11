@@ -1,4 +1,4 @@
-﻿using FarmSystemProject.Data;
+using FarmSystemProject.Data;
 using FarmSystemProject.DTOs.ProductiveMonitoringDTO;
 using FarmSystemProject.Exceptions;
 using FarmSystemProject.Interfaces.INotifications;
@@ -20,7 +20,18 @@ public class EggProductionService : IEggProductionService
         _notificationService = notificationService;
     }
 
-    public async Task<EggProductionResponse> Create(int lotId, int ownerId, CreateEggProductionRequest request)
+    public Task<EggProductionResponse> Create(int lotId, int ownerId, CreateEggProductionRequest request)
+        => Save(lotId, ownerId, request.ProductionDate, request.Quantity);
+
+    public Task<EggProductionResponse> UpdateByDate(int lotId, int ownerId, UpdateEggProductionRequest request)
+        => Save(lotId, ownerId, request.ProductionDate, request.Quantity);
+
+    // Um dia, um lançamento. A quantidade informada SUBSTITUI o total do dia em
+    // vez de somar com o que já estava lá — foi o que se pediu depois de o total
+    // estourar por lançamentos repetidos. Como POST e PUT caem aqui, o valor
+    // corrigido é o único que sobra no banco, e é ele que vai para o gráfico e
+    // para o relatório.
+    private async Task<EggProductionResponse> Save(int lotId, int ownerId, DateTime productionDate, int quantity)
     {
         var lot = await _context.Lots
             .AsNoTracking()
@@ -30,76 +41,44 @@ public class EggProductionService : IEggProductionService
         if (lot == null)
             throw new NotFoundException("Lote não encontrado.");
 
-        var birdsAliveOnDate = await GetBirdsAliveOnDate(lot, request.ProductionDate);
+        var birdsAliveOnDate = await GetBirdsAliveOnDate(lot, productionDate);
 
-        if (request.Quantity > birdsAliveOnDate)
-            throw new BusinessException($"Erro: Você informou {request.Quantity} ovos, mas o lote só possui {birdsAliveOnDate}.");
-
-        var production = new EggProduction
-        {
-            LotId = lotId,
-            ProductionDate = request.ProductionDate,
-            Quantity = request.Quantity
-        };
-
-        _context.EggProductions.Add(production);
-        await _context.SaveChangesAsync();
-
-        // Gera alerta apenas se houver queda brusca em relação à média recente
-        await _notificationService.CheckEggProduction(lotId, production.ProductionDate);
-
-        // Proteção contra divisão por zero (caso todas tenham morrido antes)
-        if (birdsAliveOnDate <= 0)
-            birdsAliveOnDate = 1;
-
-        var rate = birdsAliveOnDate > 0
-            ? Math.Round(((decimal)production.Quantity / birdsAliveOnDate) * 100, 2)
-            : 0;
-
-        return new EggProductionResponse
-        {
-            Id = production.Id,
-            ProductionDate = production.ProductionDate,
-            Quantity = production.Quantity,
-            LotId = production.LotId,
-            LayingRate = rate
-        };
-    }
-
-    public async Task<EggProductionResponse> UpdateByDate(int lotId, int ownerId, UpdateEggProductionRequest request)
-    {
-        var lot = await _context.Lots
-            .AsNoTracking()
-            .Include(l => l.Lineages)
-            .FirstOrDefaultAsync(l => l.Id == lotId && l.Farm.OwnerId == ownerId);
-
-        if (lot == null)
-            throw new NotFoundException("Lote não encontrado.");
+        if (quantity > birdsAliveOnDate)
+            throw new BusinessException($"Erro: Você informou {quantity} ovos, mas o lote só possui {birdsAliveOnDate}.");
 
         var records = await _context.EggProductions
-            .Where(e => e.LotId == lotId && e.ProductionDate.Date == request.ProductionDate.Date)
+            .Where(e => e.LotId == lotId && e.ProductionDate.Date == productionDate.Date)
             .OrderBy(e => e.Id)
             .ToListAsync();
 
+        EggProduction production;
+
         if (records.Count == 0)
-            throw new NotFoundException("Não há coleta registrada nessa data para corrigir.");
+        {
+            production = new EggProduction
+            {
+                LotId = lotId,
+                ProductionDate = productionDate,
+                Quantity = quantity
+            };
 
-        var birdsAliveOnDate = await GetBirdsAliveOnDate(lot, request.ProductionDate);
+            _context.EggProductions.Add(production);
+        }
+        else
+        {
+            // Os lançamentos extras do mesmo dia precisam sair: se ficassem,
+            // o relatório e o gráfico voltariam a somá-los em cima da correção.
+            production = records[0];
+            production.ProductionDate = productionDate;
+            production.Quantity = quantity;
 
-        if (request.Quantity > birdsAliveOnDate)
-            throw new BusinessException($"Erro: Você informou {request.Quantity} ovos, mas o lote só possui {birdsAliveOnDate}.");
-
-        // O dia fica com um único lançamento valendo o total corrigido. Se os
-        // demais lançamentos do mesmo dia continuassem existindo, o relatório e o
-        // gráfico voltariam a somá-los em cima da correção.
-        var production = records[0];
-        production.Quantity = request.Quantity;
-
-        if (records.Count > 1)
-            _context.EggProductions.RemoveRange(records.Skip(1));
+            if (records.Count > 1)
+                _context.EggProductions.RemoveRange(records.Skip(1));
+        }
 
         await _context.SaveChangesAsync();
 
+        // Gera alerta apenas se houver queda brusca em relação à média recente
         await _notificationService.CheckEggProduction(lotId, production.ProductionDate);
 
         var rate = birdsAliveOnDate > 0

@@ -8,7 +8,7 @@ public class CreateFeed
     public DateTime PurchaseDate { get; set; }
 
     [Required(ErrorMessage = "O peso por saco é obrigatório.")]
-    [Range(typeof(decimal), "0.01", "2147483647", ErrorMessage = "O peso por saco deve ser maior que zero.")]
+    [Range(typeof(decimal), "0.01", "2147483647", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true, ErrorMessage = "O peso por saco deve ser maior que zero.")]
     public decimal BagWeight { get; set; }
 
     [Required(ErrorMessage = "A quantidade é obrigatória.")]
@@ -16,6 +16,6 @@ public class CreateFeed
     public int BagQuantity { get; set; }
 
     [Required(ErrorMessage = "O valor por saco é obrigatório.")]
-    [Range(typeof(decimal), "0.01", "2147483647", ErrorMessage = "O valor por saco deve ser maior que zero.")]
+    [Range(typeof(decimal), "0.01", "2147483647", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true, ErrorMessage = "O valor por saco deve ser maior que zero.")]
     public decimal BagValue { get; set; }
 }

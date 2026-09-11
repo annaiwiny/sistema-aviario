@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -26,6 +26,7 @@ export default function LotDetailsScreen() {
     const router = useRouter();
     
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [data, setData] = useState<LotDashboardData | null>(null);
 
     // Deixa à vista de que dia são os números: hoje, ou a última coleta lançada.
@@ -55,27 +56,38 @@ export default function LotDetailsScreen() {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
-    const fetchDashboard = React.useCallback(async () => {
+    // `silent` = recarga de fundo (foco na tela, aba voltando a ficar visível):
+    // atualiza os números sem trocar a tela por um spinner.
+    const fetchDashboard = React.useCallback(async (silent = false) => {
         try {
             const token = await AsyncStorage.getItem('userToken');
-            const response = await fetch(`${API_URL}/api/Lot/${id}/dashboard?date=${localToday()}`, {
-                // Sem isto o navegador pode reaproveitar a resposta anterior e o
-                // gráfico continua mostrando os números de antes da coleta.
+
+            // O `_` muda a cada chamada. Só o cache: 'no-store' não bastava:
+            // o navegador e proxies no meio do caminho ainda devolviam a
+            // resposta anterior, e o gráfico ficava nos números de antes da
+            // coleta até o usuário dar F5.
+            const url = `${API_URL}/api/Lot/${id}/dashboard?date=${localToday()}&_=${Date.now()}`;
+
+            const response = await fetch(url, {
                 cache: 'no-store',
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Cache-Control': 'no-cache'
+                }
             });
 
             if (response.ok) {
                 const result = await response.json();
                 setData(result);
-            } else {
+            } else if (!silent) {
                 showAlert('Erro', 'Não foi possível carregar os dados do lote.');
             }
         } catch (error) {
             console.error(error);
-            showAlert('Erro', 'Falha na conexão com o servidor.');
+            if (!silent) showAlert('Erro', 'Falha na conexão com o servidor.');
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     }, [id]);
 
@@ -83,9 +95,33 @@ export default function LotDetailsScreen() {
     // congelados ao voltar da coleta diária, porque a tela não é remontada.
     useFocusEffect(
         React.useCallback(() => {
-            if (id) fetchDashboard();
+            if (id) fetchDashboard(true);
         }, [id, fetchDashboard])
     );
+
+    // Na web o app fica na mesma aba o tempo todo: voltar de outra aba, ou de
+    // outro aparelho que lançou a coleta, não dispara foco de navegação nenhum.
+    // Sem isto o gráfico só mudava com F5.
+    React.useEffect(() => {
+        if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+        const refreshIfVisible = () => {
+            if (document.visibilityState === 'visible') fetchDashboard(true);
+        };
+
+        document.addEventListener('visibilitychange', refreshIfVisible);
+        window.addEventListener('focus', refreshIfVisible);
+
+        return () => {
+            document.removeEventListener('visibilitychange', refreshIfVisible);
+            window.removeEventListener('focus', refreshIfVisible);
+        };
+    }, [fetchDashboard]);
+
+    const handleRefresh = React.useCallback(() => {
+        setRefreshing(true);
+        fetchDashboard();
+    }, [fetchDashboard]);
 
     const PieChart = () => {
         if (!data) return null;
@@ -211,10 +247,25 @@ export default function LotDetailsScreen() {
                         <Ionicons name="pencil" size={20} color="#8B5CF6" />
                     </TouchableOpacity>
                 </View>
-                <View style={{ width: 40 }} />
+                {/* Atualizar na mão. O gráfico já se recarrega sozinho ao abrir a
+                    tela, mas com o app aberto em dois aparelhos é por aqui que se
+                    puxa o que o outro acabou de lançar. */}
+                <TouchableOpacity
+                    style={{ width: 40 }}
+                    className="items-end p-2"
+                    onPress={handleRefresh}
+                    disabled={refreshing}
+                >
+                    <Ionicons name="refresh" size={22} color={refreshing ? '#C4B5FD' : '#8B5CF6'} />
+                </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 24 }}>
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: 24 }}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#8B5CF6']} tintColor="#8B5CF6" />
+                }
+            >
                 <PieChart />
 
                 <View className="bg-[#D1FAE5] rounded-full py-3 px-6 mb-8 items-center justify-center">
@@ -228,7 +279,8 @@ export default function LotDetailsScreen() {
                     <MenuButton title="Vacinação" onPress={() => router.push(`/vaccination-control?id=${id}`)}/>
                     <MenuButton title="Controle de Alimentação" onPress={() => router.push(`/feeding-control?id=${id}`)}/>
                     <MenuButton title="Controle de Gastos" onPress={() => router.push(`/feed-cost-control?id=${id}`)}/>
-                    <MenuButton title="Venda de Ovos" onPress={() => router.push(`/egg-sales-control?id=${id}`)}/>
+                    {/* Venda de Ovos saiu daqui: virou o botão VENDAS do menu
+                        principal, porque a venda é da granja e não de um lote. */}
                     <MenuButton title="Sensoriamento" onPress={() => router.push(`/sensors-control?id=${id}`)}/>
                     <MenuButton title="Controle de Mortalidade" onPress={() => router.push(`/mortality-control?id=${id}`)}/>
                 </View>

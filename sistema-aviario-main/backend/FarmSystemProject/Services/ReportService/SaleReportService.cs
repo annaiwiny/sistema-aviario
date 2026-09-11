@@ -1,4 +1,5 @@
-﻿using FarmSystemProject.Interfaces.IReportService;
+using FarmSystemProject.DTOs.Sales;
+using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.ISales;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -15,9 +16,38 @@ public class SaleReportService : ISaleReportService
         _saleService = saleService;
     }
 
-    public async Task<byte[]> GenerateSalesListReport(int lotId, int ownerId)
+    public async Task<byte[]> GenerateSalesListReport(int ownerId)
     {
-        var sales = await _saleService.GetAllByLotId(lotId, ownerId);
+        var sales = (await _saleService.GetAllByFarm(ownerId)).ToList();
+
+        return BuildDocument(
+            title: "Relatório Geral de Vendas",
+            totalLabel: "Valor Total da Granja",
+            showDateColumn: true,
+            sales: sales);
+    }
+
+    public async Task<byte[]> GenerateSalesDateReport(int ownerId, DateTime date)
+    {
+        var sales = await _saleService.GetAllByFarm(ownerId);
+        var dailySales = sales.Where(s => s.SaleDate.Date == date.Date).ToList();
+
+        return BuildDocument(
+            title: $"Vendas - {date:dd/MM/yyyy}",
+            totalLabel: "Valor Total no Dia",
+            showDateColumn: false,
+            sales: dailySales);
+    }
+
+    // Os dois relatórios só diferem no título, no rodapé e na coluna de data;
+    // o resto do desenho é o mesmo.
+    private static byte[] BuildDocument(
+        string title,
+        string totalLabel,
+        bool showDateColumn,
+        IReadOnlyList<SaleRecordResponse> sales)
+    {
+        var columnCount = showDateColumn ? 4 : 3;
 
         var document = Document.Create(container =>
         {
@@ -29,7 +59,7 @@ public class SaleReportService : ISaleReportService
 
                 page.Header().Row(row =>
                 {
-                    row.RelativeItem().Text("Relatório Geral de Vendas")
+                    row.RelativeItem().Text(title)
                         .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
 
                     row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
@@ -40,7 +70,9 @@ public class SaleReportService : ISaleReportService
                 {
                     table.ColumnsDefinition(columns =>
                     {
-                        columns.ConstantColumn(85);
+                        if (showDateColumn)
+                            columns.ConstantColumn(85);
+
                         columns.RelativeColumn();
                         columns.RelativeColumn();
                         columns.RelativeColumn();
@@ -48,10 +80,15 @@ public class SaleReportService : ISaleReportService
 
                     table.Header(header =>
                     {
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Data").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
+                        static IContainer HeaderCell(IContainer cell) =>
+                            cell.Background(Colors.Grey.Lighten3).Padding(5);
+
+                        if (showDateColumn)
+                            HeaderCell(header.Cell()).Text("Data").SemiBold();
+
+                        HeaderCell(header.Cell()).Text("Val. Uni").SemiBold();
+                        HeaderCell(header.Cell()).Text("Qtd").SemiBold();
+                        HeaderCell(header.Cell()).Text("Total").SemiBold();
                     });
 
                     foreach (var item in sales)
@@ -64,14 +101,16 @@ public class SaleReportService : ISaleReportService
                             ? cell.BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
                             : cell.PaddingHorizontal(5).PaddingTop(5);
 
-                        Row(table.Cell(), !hasNotes).Text(item.SaleDate.ToString("dd/MM/yyyy"));
+                        if (showDateColumn)
+                            Row(table.Cell(), !hasNotes).Text(item.SaleDate.ToString("dd/MM/yyyy"));
+
                         Row(table.Cell(), !hasNotes).Text($"R$ {item.UnitValue:F2}");
                         Row(table.Cell(), !hasNotes).Text(item.EggQuantity.ToString());
                         Row(table.Cell(), !hasNotes).Text($"R$ {item.TotalValue:F2}");
 
                         if (hasNotes)
                         {
-                            table.Cell().ColumnSpan(4)
+                            table.Cell().ColumnSpan((uint)columnCount)
                                 .BorderBottom(1).BorderColor(Colors.Grey.Lighten4)
                                 .PaddingHorizontal(5).PaddingBottom(5)
                                 .Text($"Obs.: {item.Notes}")
@@ -82,88 +121,8 @@ public class SaleReportService : ISaleReportService
 
                 page.Footer().Row(row =>
                 {
-                    row.RelativeItem().Text($"Valor Total do Lote: R$ {sales.Sum(s => s.TotalValue):F2}")
+                    row.RelativeItem().Text($"{totalLabel}: R$ {sales.Sum(s => s.TotalValue):F2}")
                        .SemiBold().FontSize(14);
-
-                    row.RelativeItem().AlignRight().Text(x =>
-                    {
-                        x.Span("Página ");
-                        x.CurrentPageNumber();
-                    });
-                });
-            });
-        });
-
-        return document.GeneratePdf();
-    }
-
-    public async Task<byte[]> GenerateSalesDateReport(int lotId, int ownerId, DateTime date)
-    {
-        var sales = await _saleService.GetAllByLotId(lotId, ownerId);
-        var dailySales = sales.Where(s => s.SaleDate.Date == date.Date).ToList();
-
-        var document = Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Margin(1, Unit.Centimetre);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(12));
-
-                page.Header().Row(row =>
-                {
-                    row.RelativeItem().Text($"Vendas - {date:dd/MM/yyyy}")
-                        .FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
-
-                    row.RelativeItem().AlignRight().Text(DateTime.Now.ToString("dd/MM/yyyy"))
-                        .FontSize(10).Italic();
-                });
-
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(columns =>
-                    {
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
-                        columns.RelativeColumn();
-                    });
-
-                    table.Header(header =>
-                    {
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Val. Uni").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Qtd").SemiBold();
-                        header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text("Total").SemiBold();
-                    });
-
-                    foreach (var item in dailySales)
-                    {
-                        var hasNotes = !string.IsNullOrWhiteSpace(item.Notes);
-
-                        static IContainer Row(IContainer cell, bool bordered) => bordered
-                            ? cell.BorderBottom(1).BorderColor(Colors.Grey.Lighten4).Padding(5)
-                            : cell.PaddingHorizontal(5).PaddingTop(5);
-
-                        Row(table.Cell(), !hasNotes).Text($"R$ {item.UnitValue:F2}");
-                        Row(table.Cell(), !hasNotes).Text(item.EggQuantity.ToString());
-                        Row(table.Cell(), !hasNotes).Text($"R$ {item.TotalValue:F2}");
-
-                        if (hasNotes)
-                        {
-                            table.Cell().ColumnSpan(3)
-                                .BorderBottom(1).BorderColor(Colors.Grey.Lighten4)
-                                .PaddingHorizontal(5).PaddingBottom(5)
-                                .Text($"Obs.: {item.Notes}")
-                                .FontSize(10).Italic().FontColor(Colors.Grey.Darken1);
-                        }
-                    }
-                });
-
-                page.Footer().Row(row =>
-                {
-                    row.RelativeItem().Text(x =>
-                    {
-                        x.Span($"Valor Total no Dia: R$ {dailySales.Sum(s => s.TotalValue):F2}");
-                    });
 
                     row.RelativeItem().AlignRight().Text(x =>
                     {

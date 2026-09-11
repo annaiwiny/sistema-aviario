@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -11,7 +11,6 @@ import ReportResultModal from '@/components/ReportResultModal';
 import { showAlert } from '@/utils/alert';
 
 export default function EggSalesControlScreen() {
-    const { id } = useLocalSearchParams(); 
     const router = useRouter();
 
     // Data inicial = Hoje
@@ -81,7 +80,7 @@ export default function EggSalesControlScreen() {
         try {
             const token = await AsyncStorage.getItem('userToken');
             
-            // Payload alinhado com o schema /api/lots/{lotId}/sales
+            // Payload alinhado com o schema /api/farm/sales
             const payload = {
                 unitValue: parsedUnitValue,
                 eggQuantity: parseInt(eggQuantity) || 0,
@@ -90,7 +89,7 @@ export default function EggSalesControlScreen() {
                 notes: notes.trim() ? notes.trim() : null
             };
 
-            const response = await fetch(`${API_URL}/api/lots/${id}/sales`, {
+            const response = await fetch(`${API_URL}/api/farm/sales`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -126,7 +125,7 @@ export default function EggSalesControlScreen() {
         setVerifyError(false);
         try {
             const token = await AsyncStorage.getItem('userToken');
-            const response = await fetch(`${API_URL}/api/lots/${id}/sales/summary?date=${isoDate}`, {
+            const response = await fetch(`${API_URL}/api/farm/sales/summary?date=${isoDate}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -171,11 +170,11 @@ export default function EggSalesControlScreen() {
             setIsLoading(true);
             const token = await AsyncStorage.getItem('userToken');
             
-            let url = `${API_URL}/api/lots/${id}/sales/pdf`;
-            let filename = `Relatorio_Vendas_Ovos_Lote_${id}.pdf`;
+            let url = `${API_URL}/api/farm/sales/pdf`;
+            let filename = 'Relatorio_Vendas_Ovos_Granja.pdf';
 
             if (type === 'daily') {
-                url = `${API_URL}/api/lots/${id}/sales/pdf/daily?date=${isoReportDate}`;
+                url = `${API_URL}/api/farm/sales/pdf/daily?date=${isoReportDate}`;
                 filename = `Relatorio_Vendas_Ovos_${isoReportDate}.pdf`;
             }
 
@@ -211,12 +210,19 @@ export default function EggSalesControlScreen() {
             <ScrollView contentContainerStyle={{ padding: 24 }}>
                 
                 {/* Header */}
-                <TouchableOpacity onPress={() => router.back()} className="flex-row items-center mb-6">
+                <TouchableOpacity
+                    onPress={() => router.canGoBack() ? router.back() : router.replace('/dashboard')}
+                    className="flex-row items-center mb-6"
+                >
                     <Ionicons name="chevron-back" size={24} color="#8B5CF6" />
                     <Text className="text-[#8B5CF6] font-bold text-base ml-1">voltar</Text>
                 </TouchableOpacity>
 
-                <Text className="text-2xl font-bold text-black mb-6">Registro de Vendas</Text>
+                <Text className="text-2xl font-bold text-black mb-1">Registro de Vendas</Text>
+                <Text className="text-gray-500 mb-6 text-sm font-bold leading-5">
+                    A venda vale para a granja inteira: os ovos de todos os
+                    lotes entram no mesmo total.
+                </Text>
 
                 {/* FORMULÁRIO DE ADIÇÃO */}
                 <View className="space-y-4">
@@ -318,9 +324,9 @@ export default function EggSalesControlScreen() {
 
                 {/* RELATÓRIO GERAL */}
                 <View className="mt-4 mb-8">
-                    <Text className="text-2xl font-bold text-black mb-1">Relatório de Vendas</Text>
+                    <Text className="text-2xl font-bold text-black mb-1">Relatório Geral</Text>
                     <Text className="text-gray-500 mb-4 text-sm font-bold leading-5">
-                        Baixe o Relatório de Vendas Completo desse lote:
+                        Baixe o Relatório de Vendas Completo da granja:
                     </Text>
                     
                     <TouchableOpacity 

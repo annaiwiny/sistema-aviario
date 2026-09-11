@@ -1,4 +1,4 @@
-﻿using FarmSystemProject.DTOs.Sales;
+using FarmSystemProject.DTOs.Sales;
 using FarmSystemProject.Interfaces.IReportService;
 using FarmSystemProject.Interfaces.ISales;
 using Microsoft.AspNetCore.Authorization;
@@ -7,8 +7,11 @@ using System.Security.Claims;
 
 namespace FarmSystemProject.Controllers;
 
+// Venda é da granja inteira, não de um lote: os ovos de todos os lotes são
+// juntados antes de vender. Por isso a rota é /api/farm/sales e não
+// /api/lots/{lotId}/sales, como era antes.
 [Authorize]
-[Route("api/lots/{lotId}/sales")]
+[Route("api/farm/sales")]
 [ApiController]
 public class SaleController : ControllerBase
 {
@@ -22,44 +25,44 @@ public class SaleController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<SaleRecordResponse>> Create(int lotId, [FromBody] CreateSaleRecord request)
+    public async Task<ActionResult<SaleRecordResponse>> Create([FromBody] CreateSaleRecord request)
     {
         var userId = GetUserIdFromToken();
-        var response = await _service.Create(lotId, userId, request);
-        return CreatedAtAction(nameof(GetAll), new { lotId }, response);
+        var response = await _service.Create(userId, request);
+        return CreatedAtAction(nameof(GetAll), new { }, response);
     }
 
-    // Como usar: /api/lots/1/sales/summary?date=2026-05-20
+    // Como usar: /api/farm/sales/summary?date=2026-05-20
     [HttpGet("summary")]
-    public async Task<ActionResult<SaleRecordSummary>> GetSummary(int lotId, [FromQuery] DateTime date)
+    public async Task<ActionResult<SaleRecordSummary>> GetSummary([FromQuery] DateTime date)
     {
         var userId = GetUserIdFromToken();
-        var summary = await _service.GetSummaryByDate(lotId, userId, date);
+        var summary = await _service.GetSummaryByDate(userId, date);
         return Ok(summary);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SaleRecordResponse>>> GetAll(int lotId)
+    public async Task<ActionResult<IEnumerable<SaleRecordResponse>>> GetAll()
     {
         var userId = GetUserIdFromToken();
-        var response = await _service.GetAllByLotId(lotId, userId);
+        var response = await _service.GetAllByFarm(userId);
         return Ok(response);
     }
 
     [HttpGet("pdf")]
-    public async Task<IActionResult> DownloadReport(int lotId)
+    public async Task<IActionResult> DownloadReport()
     {
         var userId = GetUserIdFromToken();
-        var fileBytes = await _reportService.GenerateSalesListReport(lotId, userId);
-        return File(fileBytes, "application/pdf", $"Vendas_Lote_{lotId}.pdf");
+        var fileBytes = await _reportService.GenerateSalesListReport(userId);
+        return File(fileBytes, "application/pdf", "Vendas_Granja.pdf");
     }
 
-    // Como usar: /api/lots/1/sales/pdf/daily?date=2026-05-20
+    // Como usar: /api/farm/sales/pdf/daily?date=2026-05-20
     [HttpGet("pdf/daily")]
-    public async Task<IActionResult> DownloadDailyReport(int lotId, [FromQuery] DateTime date)
+    public async Task<IActionResult> DownloadDailyReport([FromQuery] DateTime date)
     {
         var userId = GetUserIdFromToken();
-        var fileBytes = await _reportService.GenerateSalesDateReport(lotId, userId, date);
+        var fileBytes = await _reportService.GenerateSalesDateReport(userId, date);
         return File(fileBytes, "application/pdf", $"Vendas_{date:yyyyMMdd}.pdf");
     }
 

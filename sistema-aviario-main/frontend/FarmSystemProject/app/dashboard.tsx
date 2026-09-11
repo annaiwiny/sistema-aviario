@@ -185,6 +185,21 @@ export default function DashboardScreen() {
                     </TouchableOpacity>
                 </View>
 
+                {/* Vendas: fica fora dos lotes de propósito. Os ovos de todos os
+                    lotes são juntados antes de vender, então não dá para dizer de
+                    qual lote saiu cada venda - ela é da granja inteira. */}
+                <TouchableOpacity
+                    className="bg-[#D1FAE5] border-2 border-[#8B5CF6] rounded-2xl py-5 mb-4 items-center justify-center shadow-sm shadow-purple-200"
+                    activeOpacity={0.8}
+                    onPress={() => router.push('/egg-sales-control')}
+                >
+                    <Text className="text-[#8B5CF6] text-xl font-bold tracking-widest uppercase">
+                        VENDAS
+                    </Text>
+                </TouchableOpacity>
+
+                <View className="h-0.5 bg-[#8B5CF6] rounded-full mb-6" />
+
                 {/* Content */}
                 <ScrollView
                     className="flex-1"
